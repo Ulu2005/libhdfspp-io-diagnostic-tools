@@ -1,0 +1,20 @@
+package proto;
+
+message log {
+    required int32 date = 1;
+    required int32 time = 2;
+    required int32 threadId = 3;
+
+    enum FuncType {
+        OPEN = 0;
+        OPEN_RET = 1;
+        CLOSE = 2;
+        CLOSE_RET = 3;
+        READ = 4;
+        READ_RET = 5;    
+    }
+
+    required FuncType type = 4;
+    optional string path = 5;
+    repeated int64 argument = 6;
+}
