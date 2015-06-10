@@ -7,6 +7,8 @@
 
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 
+#include "log.pb.h"
+
 namespace iotools
 {
 
@@ -14,7 +16,7 @@ class Logger
 {
 public:
     /* Public type */
-    typedef enum {                  //function type of different file operation
+    typedef enum {              //function type of different file operation
         OPEN,
         OPEN_RET,
         CLOSE,
@@ -27,18 +29,19 @@ public:
     Logger ();
     virtual ~Logger ();
     
-    bool startLog(const char* logFile, const char* indexFile);
-    bool logMessage(FuncType type, ...);
+    static bool startLog(const char* logFile, const char* indexFile);
+    static bool logMessage(FuncType type, ...);
     
-    bool logOpen(const char* path);     //for initial test only, will be deleted
 private:
-    int getTime();                  //get time in milesecond and refresh date
+    static int getTime();              //get time in millisecond and refresh current day
 
-    int _current_day;
-    FILE* _indexFile;
-    google::protobuf::io::FileOutputStream* _logFile;
+    static int _current_day;
+    static FILE* _indexFile;
+    static google::protobuf::io::FileOutputStream* _logFile;
 };
  
+extern Logger logger;
+
 } /* iotools */ 
 
 #endif

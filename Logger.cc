@@ -1,27 +1,29 @@
 /* Copyright (c) 2005 - 2015, Hewlett-Packard Development Co., L.P. */
 
-#include <time.h>
+#include <iostream>
+#include <ctime>
+#include <cstdarg>
 #include <unistd.h>
 #include <fcntl.h>
-#include <iostream>
 
 #include "Logger.h"
-#include "log.pb.h"
 
 using namespace iotools;
 namespace pbio = google::protobuf::io;
 
+//static initializatoin
+int Logger::_current_day(-1);
+FILE* Logger::_indexFile(nullptr);
+pbio::FileOutputStream* Logger::_logFile(nullptr);
+Logger logger;
 
 Logger::Logger()
-    : _current_day(-1)
-    , _indexFile(nullptr)
-    , _logFile(nullptr)
 {
 }
 
 Logger::~Logger()
 {
-    if (_indexFile!= nullptr) {
+    if (_indexFile != nullptr) {
         fclose(_indexFile);
         _indexFile = nullptr;
     }
@@ -32,7 +34,6 @@ Logger::~Logger()
         _logFile = nullptr;
     }
 }
-
 
 bool Logger::startLog(const char* logFile, const char* indexFile)
 {
@@ -56,28 +57,69 @@ bool Logger::startLog(const char* logFile, const char* indexFile)
     return true;
 }
 
-bool Logger::logOpen(const char* path)
+bool Logger::logMessage(FuncType type, ...)
 {
-    //TODO: add lock
-    proto::log msg; //in actual code this object can be reused
+    proto::log msg; 
     msg.set_time(getTime());
-    msg.set_date(_current_day); //should always set after time
-    msg.set_threadid(1024); //TODO: get thread id
-    msg.set_type(proto::log_FuncType_OPEN);
-    msg.set_path(path);
-    msg.add_argument(1);
-    msg.add_argument(2);
-
-    if (!msg.SerializeToZeroCopyStream(_logFile)) {
-        std::cerr << "failed to serialize log message." << std::endl;
-        return false;
-    }
+    msg.set_date(_current_day);     //should always set after time
+    msg.set_threadid(1024);         //TODO: get thread id
     
+    va_list va;
+    va_start(va, type);
+    switch (type) {
+        case OPEN:
+            msg.set_type(proto::log_FuncType_OPEN);
+            msg.add_argument(va_arg(va, long));
+            msg.add_argument(va_arg(va, long));
+            msg.add_argument(va_arg(va, long));
+            msg.add_argument(va_arg(va, long));
+            msg.add_argument(va_arg(va, long));
+            msg.add_argument(va_arg(va, long));
+            break;
+        case OPEN_RET:
+            msg.set_type(proto::log_FuncType_OPEN_RET);
+            msg.add_argument(va_arg(va, long));
+            break;
+        case CLOSE:
+            msg.set_type(proto::log_FuncType_CLOSE);
+            msg.add_argument(va_arg(va, long));
+            msg.add_argument(va_arg(va, long));
+            break;
+        case CLOSE_RET:
+            msg.set_type(proto::log_FuncType_CLOSE_RET);
+            msg.add_argument(va_arg(va, long));
+            break;
+        case READ:
+            msg.set_type(proto::log_FuncType_READ);
+            msg.add_argument(va_arg(va, long));
+            msg.add_argument(va_arg(va, long));
+            msg.add_argument(va_arg(va, long));
+            msg.add_argument(va_arg(va, long));
+            msg.add_argument(va_arg(va, long));
+            break;
+        case READ_RET:
+            msg.set_type(proto::log_FuncType_READ_RET);
+            msg.add_argument(va_arg(va, long));
+            break;
+    }
+    va_end(va);
+    
+    //write log message and message size onto disk
     int size = msg.ByteSize();
+    //TODO: add lock
     if (fprintf(_indexFile, "%d\n", size) <= 0) {
         std::cerr << "failed to write message size." << std::endl;
         return false;
     }
+    fflush(_indexFile);
+    
+    if (!msg.SerializeToZeroCopyStream(_logFile)) {
+        //TODO: error handling; 
+        //delete the last line of index file? or stop logging
+        std::cerr << "failed to serialize log message." << std::endl;
+        return false;
+    }
+    _logFile->Flush(); 
 
     return true;
 }
@@ -86,6 +128,7 @@ int Logger::getTime()
 {
     struct timespec now; 
     struct tm tm; 
+
     clock_gettime(CLOCK_REALTIME, &now);
     localtime_r(&now.tv_sec, &tm);
 
@@ -98,24 +141,7 @@ int Logger::getTime()
     mm_second += tm.tm_min * 60 * 1000;
     mm_second += tm.tm_sec * 1000;
     mm_second += int(now.tv_nsec / 1000000);
-
+    
     return mm_second; 
 }
 
-int main(int argc, char *argv[])
-{
-    if (argc != 3) {
-        std::cout << "Usage: " << argv[0] 
-            << " logfile indexfile" << std::endl;
-        return 0;
-    } 
-
-    Logger test;
-    if (!test.startLog(argv[1], argv[2])) {
-        std::cerr << "Failed to start logging." << std::endl;
-        return 0; 
-    }
-    
-    test.logOpen("fake path");
-    return 0;
-}
