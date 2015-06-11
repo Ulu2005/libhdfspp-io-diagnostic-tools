@@ -67,7 +67,7 @@ void printLogInfo(const proto::log &msg)
 
     std::cout << "argu size: " << msg.argument_size() << std::endl; 
     for (int i = 0; i < msg.argument_size(); ++i) {
-        std::cout << std::hex << "\t" << msg.argument(i) << std::endl; 
+        std::cout << "\t" << msg.argument(i) << std::endl; 
     }
     
     std::cout << std::dec << " " << std::endl; 

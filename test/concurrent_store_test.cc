@@ -1,10 +1,13 @@
-// basic test for log some messages and print logged pointer address.
+// test for logging messages concurrently
 
 #include <iostream>
+#include <thread>
 
 #include "LibhdfsppLog.h"
 
 using namespace iotools;
+
+void test(int n);
 
 int main(int argc, char *argv[])
 {
@@ -16,14 +19,20 @@ int main(int argc, char *argv[])
 
     Logging::startLog(argv[1], argv[2]);
     
-    int a(1024), b(1), c(1);
-    char str[1024];
-    strcpy(str, "this is open path");
+     
+    std::thread th[10]; 
+    for (int i = 0; i < 10; ++i) {
+        th[i] = std::thread(test, i);
+    }
 
-    LOG_OPEN(&a, str, 11, 21, 31, 41);
-    LOG_OPEN_RET(&a);
-    LOG_CLOSE_RET(&b);
-    LOG_READ_RET(&c);
-   
+    for (int i = 0; i < 10; ++i) {
+        th[i].join();
+    }
+
     return 0;
+}
+
+void test(int n)
+{
+    LOG_OPEN_RET(n);
 }

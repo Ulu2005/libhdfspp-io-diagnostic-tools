@@ -2,7 +2,6 @@
 
 #include <iostream>
 #include <ctime>
-#include <cstdarg>
 #include <unistd.h>
 #include <fcntl.h>
 
@@ -11,18 +10,20 @@
 using namespace iotools;
 namespace pbio = google::protobuf::io;
 
-//static initializatoin
-int Logger::_current_day(-1);
-FILE* Logger::_indexFile(nullptr);
-pbio::FileOutputStream* Logger::_logFile(nullptr);
 Logger logger;
 
 Logger::Logger()
+    : _mutex(PTHREAD_MUTEX_INITIALIZER)
+    , _current_day(-1)
+    , _indexFile(nullptr)
+    , _logFile(nullptr)
 {
 }
 
 Logger::~Logger()
 {
+    pthread_mutex_destroy(&_mutex);
+
     if (_indexFile != nullptr) {
         fclose(_indexFile);
         _indexFile = nullptr;
@@ -57,20 +58,18 @@ bool Logger::startLog(const char* logFile, const char* indexFile)
     return true;
 }
 
-bool Logger::logMessage(FuncType type, ...)
+bool Logger::logMessage(FuncType type, va_list &va)
 {
     proto::log msg; 
     msg.set_time(getTime());
     msg.set_date(_current_day);     //should always set after time
-    msg.set_threadid(1024);         //TODO: get thread id
+    msg.set_threadid((int)pthread_self());         //TODO: ensure thread id unique
     
-    va_list va;
-    va_start(va, type);
     switch (type) {
         case OPEN:
             msg.set_type(proto::log_FuncType_OPEN);
             msg.add_argument(va_arg(va, long));
-            msg.add_argument(va_arg(va, long));
+            msg.set_path(va_arg(va, char*)); 
             msg.add_argument(va_arg(va, long));
             msg.add_argument(va_arg(va, long));
             msg.add_argument(va_arg(va, long));
@@ -105,22 +104,25 @@ bool Logger::logMessage(FuncType type, ...)
     va_end(va);
     
     //write log message and message size onto disk
+    pthread_mutex_lock(&_mutex);
+   
     int size = msg.ByteSize();
-    //TODO: add lock
     if (fprintf(_indexFile, "%d\n", size) <= 0) {
         std::cerr << "failed to write message size." << std::endl;
+        pthread_mutex_unlock(&_mutex);
         return false;
     }
     fflush(_indexFile);
     
     if (!msg.SerializeToZeroCopyStream(_logFile)) {
-        //TODO: error handling; 
-        //delete the last line of index file? or stop logging
         std::cerr << "failed to serialize log message." << std::endl;
+        pthread_mutex_unlock(&_mutex);
         return false;
     }
     _logFile->Flush(); 
 
+    pthread_mutex_unlock(&_mutex);
+    
     return true;
 }
 

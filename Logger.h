@@ -5,6 +5,8 @@
 #ifndef LIBHDFSPP_LOGGER_H_
 #define LIBHDFSPP_LOGGER_H_ 
 
+#include <cstdarg>
+#include <pthread.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 
 #include "log.pb.h"
@@ -29,19 +31,18 @@ public:
     Logger ();
     virtual ~Logger ();
     
-    static bool startLog(const char* logFile, const char* indexFile);
-    static bool logMessage(FuncType type, ...);
+    bool startLog(const char* logFile, const char* indexFile);
+    bool logMessage(FuncType type, va_list &va);
     
 private:
-    static int getTime();              //get time in millisecond and refresh current day
-
-    static int _current_day;
-    static FILE* _indexFile;
-    static google::protobuf::io::FileOutputStream* _logFile;
+    int getTime();       //get time in millisecond and refresh current day
+    
+    pthread_mutex_t _mutex;
+    int _current_day;
+    FILE* _indexFile;
+    google::protobuf::io::FileOutputStream* _logFile;
 };
  
-extern Logger logger;
-
 } /* iotools */ 
 
 #endif
