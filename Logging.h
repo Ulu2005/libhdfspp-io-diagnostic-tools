@@ -7,7 +7,7 @@
 
 #include "Logger.h"
 
-namespace iotools
+namespace hdfs
 {
 
 class Logging

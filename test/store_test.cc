@@ -4,7 +4,7 @@
 
 #include "LibhdfsppLog.h"
 
-using namespace iotools;
+using namespace hdfs;
 
 int main(int argc, char *argv[])
 {

@@ -7,7 +7,7 @@
 
 #include "Logger.h"
 
-using namespace iotools;
+using namespace hdfs;
 namespace pbio = google::protobuf::io;
 
 Logger logger;
@@ -60,14 +60,14 @@ bool Logger::startLog(const char* logFile, const char* indexFile)
 
 bool Logger::logMessage(FuncType type, va_list &va)
 {
-    proto::log msg; 
+    hadoop::hdfs::log msg; 
     msg.set_time(getTime());
     msg.set_date(_current_day);     //should always set after time
-    msg.set_threadid((int)pthread_self());         //TODO: ensure thread id unique
+    msg.set_threadid((long)pthread_self()); 
     
     switch (type) {
         case OPEN:
-            msg.set_type(proto::log_FuncType_OPEN);
+            msg.set_type(hadoop::hdfs::log_FuncType_OPEN);
             msg.add_argument(va_arg(va, long));
             msg.set_path(va_arg(va, char*)); 
             msg.add_argument(va_arg(va, long));
@@ -76,20 +76,20 @@ bool Logger::logMessage(FuncType type, va_list &va)
             msg.add_argument(va_arg(va, long));
             break;
         case OPEN_RET:
-            msg.set_type(proto::log_FuncType_OPEN_RET);
+            msg.set_type(hadoop::hdfs::log_FuncType_OPEN_RET);
             msg.add_argument(va_arg(va, long));
             break;
         case CLOSE:
-            msg.set_type(proto::log_FuncType_CLOSE);
+            msg.set_type(hadoop::hdfs::log_FuncType_CLOSE);
             msg.add_argument(va_arg(va, long));
             msg.add_argument(va_arg(va, long));
             break;
         case CLOSE_RET:
-            msg.set_type(proto::log_FuncType_CLOSE_RET);
+            msg.set_type(hadoop::hdfs::log_FuncType_CLOSE_RET);
             msg.add_argument(va_arg(va, long));
             break;
         case READ:
-            msg.set_type(proto::log_FuncType_READ);
+            msg.set_type(hadoop::hdfs::log_FuncType_READ);
             msg.add_argument(va_arg(va, long));
             msg.add_argument(va_arg(va, long));
             msg.add_argument(va_arg(va, long));
@@ -97,7 +97,7 @@ bool Logger::logMessage(FuncType type, va_list &va)
             msg.add_argument(va_arg(va, long));
             break;
         case READ_RET:
-            msg.set_type(proto::log_FuncType_READ_RET);
+            msg.set_type(hadoop::hdfs::log_FuncType_READ_RET);
             msg.add_argument(va_arg(va, long));
             break;
     }
@@ -126,7 +126,7 @@ bool Logger::logMessage(FuncType type, va_list &va)
     return true;
 }
 
-int Logger::getTime()
+long Logger::getTime()
 {
     struct timespec now; 
     struct tm tm; 
@@ -138,12 +138,13 @@ int Logger::getTime()
         _current_day = tm.tm_yday;
     }   
     
-    int mm_second = 0;
-    mm_second += tm.tm_hour * 3600 * 1000;
-    mm_second += tm.tm_min * 60 * 1000;
-    mm_second += tm.tm_sec * 1000;
-    mm_second += int(now.tv_nsec / 1000000);
+    long nano_second = 0;
+    nano_second += tm.tm_hour * 3600;
+    nano_second += tm.tm_min * 60;
+    nano_second += tm.tm_sec;
+    nano_second *= 1000000000;
+    nano_second += now.tv_nsec;
     
-    return mm_second; 
+    return nano_second; 
 }
 

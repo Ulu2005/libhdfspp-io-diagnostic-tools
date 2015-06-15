@@ -12,8 +12,8 @@
 
 namespace pbio = ::google::protobuf::io;
 
-void printLogInfo(const proto::log &msg);
-std::string getLogType(const proto::log &msg);
+void printLogInfo(const hadoop::hdfs::log &msg);
+std::string getLogType(const hadoop::hdfs::log &msg);
 
 int main(int argc, const char* argv[]) {
     if (argc != 3) {
@@ -34,7 +34,7 @@ int main(int argc, const char* argv[]) {
     
     int size;
     char buf[32];
-    proto::log msg;
+    hadoop::hdfs::log msg;
 
     while(!feof(indexFile)) {
         if (fgets(buf, sizeof(buf), indexFile) == NULL) {
@@ -55,38 +55,42 @@ int main(int argc, const char* argv[]) {
     return 0;
 }
 
-void printLogInfo(const proto::log &msg)
+void printLogInfo(const hadoop::hdfs::log &msg)
 {
     std::cout << "date: " << msg.date() << std::endl; 
     std::cout << "time: " << msg.time() << std::endl; 
     std::cout << "thread id: " <<  msg.threadid() << std::endl; 
     std::cout << "type: " << getLogType(msg) << std::endl; 
-    if (msg.type() == proto::log_FuncType_OPEN) {
+    if (msg.type() == hadoop::hdfs::log_FuncType_OPEN) {
         std::cout << "path: " << msg.path() << std::endl; 
     }
 
     std::cout << "argu size: " << msg.argument_size() << std::endl; 
     for (int i = 0; i < msg.argument_size(); ++i) {
-        std::cout << "\t" << msg.argument(i) << std::endl; 
+        if (msg.argument(i) > (long)(1 << 31)) {
+            std::cout << std::hex << "\t" << msg.argument(i) << std::endl; 
+        } else {
+            std::cout << std::dec << "\t" << msg.argument(i) << std::endl; 
+        }
     }
     
     std::cout << std::dec << " " << std::endl; 
 }
 
-std::string getLogType(const proto::log &msg)
+std::string getLogType(const hadoop::hdfs::log &msg)
 {
     switch (msg.type()) {
-        case proto::log_FuncType_OPEN:
+        case hadoop::hdfs::log_FuncType_OPEN:
             return "OPEN";   
-        case proto::log_FuncType_OPEN_RET:
+        case hadoop::hdfs::log_FuncType_OPEN_RET:
             return "OPEN_RET";
-        case proto::log_FuncType_CLOSE:
+        case hadoop::hdfs::log_FuncType_CLOSE:
             return "CLOSE";
-        case proto::log_FuncType_CLOSE_RET:
+        case hadoop::hdfs::log_FuncType_CLOSE_RET:
             return "CLOSE_RET";
-        case proto::log_FuncType_READ:
+        case hadoop::hdfs::log_FuncType_READ:
             return "READ";
-        case proto::log_FuncType_READ_RET:
+        case hadoop::hdfs::log_FuncType_READ_RET:
             return "READ_RET";
         default:
             return "unknown"; 

@@ -16,7 +16,8 @@
 #include <google/protobuf/wire_format.h>
 // @@protoc_insertion_point(includes)
 
-namespace proto {
+namespace hadoop {
+namespace hdfs {
 
 namespace {
 
@@ -85,12 +86,12 @@ void protobuf_AddDesc_log_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-    "\n\tlog.proto\022\005proto\"\314\001\n\003log\022\014\n\004date\030\001 \002(\005"
-    "\022\014\n\004time\030\002 \002(\005\022\020\n\010threadId\030\003 \002(\005\022!\n\004type"
-    "\030\004 \002(\0162\023.proto.log.FuncType\022\014\n\004path\030\005 \001("
-    "\t\022\020\n\010argument\030\006 \003(\003\"T\n\010FuncType\022\010\n\004OPEN\020"
-    "\000\022\014\n\010OPEN_RET\020\001\022\t\n\005CLOSE\020\002\022\r\n\tCLOSE_RET\020"
-    "\003\022\010\n\004READ\020\004\022\014\n\010READ_RET\020\005", 225);
+    "\n\tlog.proto\022\013hadoop.hdfs\"\322\001\n\003log\022\014\n\004date"
+    "\030\001 \002(\005\022\014\n\004time\030\002 \002(\003\022\020\n\010threadId\030\003 \002(\003\022\'"
+    "\n\004type\030\004 \002(\0162\031.hadoop.hdfs.log.FuncType\022"
+    "\014\n\004path\030\005 \001(\t\022\020\n\010argument\030\006 \003(\003\"T\n\010FuncT"
+    "ype\022\010\n\004OPEN\020\000\022\014\n\010OPEN_RET\020\001\022\t\n\005CLOSE\020\002\022\r"
+    "\n\tCLOSE_RET\020\003\022\010\n\004READ\020\004\022\014\n\010READ_RET\020\005", 237);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "log.proto", &protobuf_RegisterTypes);
   log::default_instance_ = new log();
@@ -148,7 +149,7 @@ const int log::kArgumentFieldNumber;
 log::log()
   : ::google::protobuf::Message() {
   SharedCtor();
-  // @@protoc_insertion_point(constructor:proto.log)
+  // @@protoc_insertion_point(constructor:hadoop.hdfs.log)
 }
 
 void log::InitAsDefaultInstance() {
@@ -158,22 +159,22 @@ log::log(const log& from)
   : ::google::protobuf::Message() {
   SharedCtor();
   MergeFrom(from);
-  // @@protoc_insertion_point(copy_constructor:proto.log)
+  // @@protoc_insertion_point(copy_constructor:hadoop.hdfs.log)
 }
 
 void log::SharedCtor() {
   ::google::protobuf::internal::GetEmptyString();
   _cached_size_ = 0;
   date_ = 0;
-  time_ = 0;
-  threadid_ = 0;
+  time_ = GOOGLE_LONGLONG(0);
+  threadid_ = GOOGLE_LONGLONG(0);
   type_ = 0;
   path_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
 log::~log() {
-  // @@protoc_insertion_point(destructor:proto.log)
+  // @@protoc_insertion_point(destructor:hadoop.hdfs.log)
   SharedDtor();
 }
 
@@ -218,7 +219,7 @@ void log::Clear() {
   } while (0)
 
   if (_has_bits_[0 / 32] & 31) {
-    ZR_(date_, type_);
+    ZR_(time_, threadid_);
     if (has_path()) {
       if (path_ != &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
         path_->clear();
@@ -238,7 +239,7 @@ bool log::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream* input) {
 #define DO_(EXPRESSION) if (!(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
-  // @@protoc_insertion_point(parse_start:proto.log)
+  // @@protoc_insertion_point(parse_start:hadoop.hdfs.log)
   for (;;) {
     ::std::pair< ::google::protobuf::uint32, bool> p = input->ReadTagWithCutoff(127);
     tag = p.first;
@@ -258,12 +259,12 @@ bool log::MergePartialFromCodedStream(
         break;
       }
 
-      // required int32 time = 2;
+      // required int64 time = 2;
       case 2: {
         if (tag == 16) {
          parse_time:
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-                   ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
+                   ::google::protobuf::int64, ::google::protobuf::internal::WireFormatLite::TYPE_INT64>(
                  input, &time_)));
           set_has_time();
         } else {
@@ -273,12 +274,12 @@ bool log::MergePartialFromCodedStream(
         break;
       }
 
-      // required int32 threadId = 3;
+      // required int64 threadId = 3;
       case 3: {
         if (tag == 24) {
          parse_threadId:
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-                   ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
+                   ::google::protobuf::int64, ::google::protobuf::internal::WireFormatLite::TYPE_INT64>(
                  input, &threadid_)));
           set_has_threadid();
         } else {
@@ -288,7 +289,7 @@ bool log::MergePartialFromCodedStream(
         break;
       }
 
-      // required .proto.log.FuncType type = 4;
+      // required .hadoop.hdfs.log.FuncType type = 4;
       case 4: {
         if (tag == 32) {
          parse_type:
@@ -296,8 +297,8 @@ bool log::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    int, ::google::protobuf::internal::WireFormatLite::TYPE_ENUM>(
                  input, &value)));
-          if (::proto::log_FuncType_IsValid(value)) {
-            set_type(static_cast< ::proto::log_FuncType >(value));
+          if (::hadoop::hdfs::log_FuncType_IsValid(value)) {
+            set_type(static_cast< ::hadoop::hdfs::log_FuncType >(value));
           } else {
             mutable_unknown_fields()->AddVarint(4, value);
           }
@@ -358,33 +359,33 @@ bool log::MergePartialFromCodedStream(
     }
   }
 success:
-  // @@protoc_insertion_point(parse_success:proto.log)
+  // @@protoc_insertion_point(parse_success:hadoop.hdfs.log)
   return true;
 failure:
-  // @@protoc_insertion_point(parse_failure:proto.log)
+  // @@protoc_insertion_point(parse_failure:hadoop.hdfs.log)
   return false;
 #undef DO_
 }
 
 void log::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // @@protoc_insertion_point(serialize_start:proto.log)
+  // @@protoc_insertion_point(serialize_start:hadoop.hdfs.log)
   // required int32 date = 1;
   if (has_date()) {
     ::google::protobuf::internal::WireFormatLite::WriteInt32(1, this->date(), output);
   }
 
-  // required int32 time = 2;
+  // required int64 time = 2;
   if (has_time()) {
-    ::google::protobuf::internal::WireFormatLite::WriteInt32(2, this->time(), output);
+    ::google::protobuf::internal::WireFormatLite::WriteInt64(2, this->time(), output);
   }
 
-  // required int32 threadId = 3;
+  // required int64 threadId = 3;
   if (has_threadid()) {
-    ::google::protobuf::internal::WireFormatLite::WriteInt32(3, this->threadid(), output);
+    ::google::protobuf::internal::WireFormatLite::WriteInt64(3, this->threadid(), output);
   }
 
-  // required .proto.log.FuncType type = 4;
+  // required .hadoop.hdfs.log.FuncType type = 4;
   if (has_type()) {
     ::google::protobuf::internal::WireFormatLite::WriteEnum(
       4, this->type(), output);
@@ -410,28 +411,28 @@ void log::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
         unknown_fields(), output);
   }
-  // @@protoc_insertion_point(serialize_end:proto.log)
+  // @@protoc_insertion_point(serialize_end:hadoop.hdfs.log)
 }
 
 ::google::protobuf::uint8* log::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
-  // @@protoc_insertion_point(serialize_to_array_start:proto.log)
+  // @@protoc_insertion_point(serialize_to_array_start:hadoop.hdfs.log)
   // required int32 date = 1;
   if (has_date()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteInt32ToArray(1, this->date(), target);
   }
 
-  // required int32 time = 2;
+  // required int64 time = 2;
   if (has_time()) {
-    target = ::google::protobuf::internal::WireFormatLite::WriteInt32ToArray(2, this->time(), target);
+    target = ::google::protobuf::internal::WireFormatLite::WriteInt64ToArray(2, this->time(), target);
   }
 
-  // required int32 threadId = 3;
+  // required int64 threadId = 3;
   if (has_threadid()) {
-    target = ::google::protobuf::internal::WireFormatLite::WriteInt32ToArray(3, this->threadid(), target);
+    target = ::google::protobuf::internal::WireFormatLite::WriteInt64ToArray(3, this->threadid(), target);
   }
 
-  // required .proto.log.FuncType type = 4;
+  // required .hadoop.hdfs.log.FuncType type = 4;
   if (has_type()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteEnumToArray(
       4, this->type(), target);
@@ -458,7 +459,7 @@ void log::SerializeWithCachedSizes(
     target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
         unknown_fields(), target);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:proto.log)
+  // @@protoc_insertion_point(serialize_to_array_end:hadoop.hdfs.log)
   return target;
 }
 
@@ -473,21 +474,21 @@ int log::ByteSize() const {
           this->date());
     }
 
-    // required int32 time = 2;
+    // required int64 time = 2;
     if (has_time()) {
       total_size += 1 +
-        ::google::protobuf::internal::WireFormatLite::Int32Size(
+        ::google::protobuf::internal::WireFormatLite::Int64Size(
           this->time());
     }
 
-    // required int32 threadId = 3;
+    // required int64 threadId = 3;
     if (has_threadid()) {
       total_size += 1 +
-        ::google::protobuf::internal::WireFormatLite::Int32Size(
+        ::google::protobuf::internal::WireFormatLite::Int64Size(
           this->threadid());
     }
 
-    // required .proto.log.FuncType type = 4;
+    // required .hadoop.hdfs.log.FuncType type = 4;
     if (has_type()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::EnumSize(this->type());
@@ -600,6 +601,7 @@ void log::Swap(log* other) {
 
 // @@protoc_insertion_point(namespace_scope)
 
-}  // namespace proto
+}  // namespace hdfs
+}  // namespace hadoop
 
 // @@protoc_insertion_point(global_scope)

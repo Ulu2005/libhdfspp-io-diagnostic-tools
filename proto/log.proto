@@ -1,9 +1,9 @@
-package proto;
+package hadoop.hdfs;
 
 message log {
     required int32 date = 1;
-    required int32 time = 2;
-    required int32 threadId = 3;
+    required int64 time = 2;
+    required int64 threadId = 3;
 
     enum FuncType {
         OPEN = 0;

@@ -2,10 +2,11 @@
 
 #include <iostream>
 #include <thread>
+#include <string>
 
 #include "LibhdfsppLog.h"
 
-using namespace iotools;
+using namespace hdfs;
 
 void test(int n);
 
@@ -18,7 +19,6 @@ int main(int argc, char *argv[])
     } 
 
     Logging::startLog(argv[1], argv[2]);
-    
      
     std::thread th[10]; 
     for (int i = 0; i < 10; ++i) {
@@ -34,5 +34,9 @@ int main(int argc, char *argv[])
 
 void test(int n)
 {
+    char buf[64];
+    snprintf(buf, sizeof(buf), "crazy path #%d", n);
+
+    LOG_OPEN(&n, buf, n, n, n, n);
     LOG_OPEN_RET(n);
 }

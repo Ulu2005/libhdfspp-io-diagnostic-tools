@@ -3,7 +3,7 @@
 #include <cstdarg>
 #include "Logging.h"
 
-using namespace iotools;
+using namespace hdfs;
 
 // static initialization
 extern Logger logger;
@@ -25,7 +25,7 @@ void Logging::startLog(const char* logFile, const char* indexFile)
     logFilePath = logFile;
     indexFilePath = indexFile;
 
-    if (!logger.startLog(logFilePath.c_str(), indexFilePath.c_str())) {
+    if (!logger.startLog(logFile, indexFile)) {
         exit(1);  
     }
 

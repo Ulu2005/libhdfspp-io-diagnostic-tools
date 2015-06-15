@@ -27,7 +27,8 @@
 #include <google/protobuf/unknown_field_set.h>
 // @@protoc_insertion_point(includes)
 
-namespace proto {
+namespace hadoop {
+namespace hdfs {
 
 // Internal implementation detail -- do not call these.
 void  protobuf_AddDesc_log_2eproto();
@@ -149,26 +150,26 @@ class log : public ::google::protobuf::Message {
   inline ::google::protobuf::int32 date() const;
   inline void set_date(::google::protobuf::int32 value);
 
-  // required int32 time = 2;
+  // required int64 time = 2;
   inline bool has_time() const;
   inline void clear_time();
   static const int kTimeFieldNumber = 2;
-  inline ::google::protobuf::int32 time() const;
-  inline void set_time(::google::protobuf::int32 value);
+  inline ::google::protobuf::int64 time() const;
+  inline void set_time(::google::protobuf::int64 value);
 
-  // required int32 threadId = 3;
+  // required int64 threadId = 3;
   inline bool has_threadid() const;
   inline void clear_threadid();
   static const int kThreadIdFieldNumber = 3;
-  inline ::google::protobuf::int32 threadid() const;
-  inline void set_threadid(::google::protobuf::int32 value);
+  inline ::google::protobuf::int64 threadid() const;
+  inline void set_threadid(::google::protobuf::int64 value);
 
-  // required .proto.log.FuncType type = 4;
+  // required .hadoop.hdfs.log.FuncType type = 4;
   inline bool has_type() const;
   inline void clear_type();
   static const int kTypeFieldNumber = 4;
-  inline ::proto::log_FuncType type() const;
-  inline void set_type(::proto::log_FuncType value);
+  inline ::hadoop::hdfs::log_FuncType type() const;
+  inline void set_type(::hadoop::hdfs::log_FuncType value);
 
   // optional string path = 5;
   inline bool has_path() const;
@@ -194,7 +195,7 @@ class log : public ::google::protobuf::Message {
   inline ::google::protobuf::RepeatedField< ::google::protobuf::int64 >*
       mutable_argument();
 
-  // @@protoc_insertion_point(class_scope:proto.log)
+  // @@protoc_insertion_point(class_scope:hadoop.hdfs.log)
  private:
   inline void set_has_date();
   inline void clear_has_date();
@@ -211,10 +212,10 @@ class log : public ::google::protobuf::Message {
 
   ::google::protobuf::uint32 _has_bits_[1];
   mutable int _cached_size_;
+  ::google::protobuf::int64 time_;
   ::google::protobuf::int32 date_;
-  ::google::protobuf::int32 time_;
-  ::google::protobuf::int32 threadid_;
   int type_;
+  ::google::protobuf::int64 threadid_;
   ::std::string* path_;
   ::google::protobuf::RepeatedField< ::google::protobuf::int64 > argument_;
   friend void  protobuf_AddDesc_log_2eproto();
@@ -246,16 +247,16 @@ inline void log::clear_date() {
   clear_has_date();
 }
 inline ::google::protobuf::int32 log::date() const {
-  // @@protoc_insertion_point(field_get:proto.log.date)
+  // @@protoc_insertion_point(field_get:hadoop.hdfs.log.date)
   return date_;
 }
 inline void log::set_date(::google::protobuf::int32 value) {
   set_has_date();
   date_ = value;
-  // @@protoc_insertion_point(field_set:proto.log.date)
+  // @@protoc_insertion_point(field_set:hadoop.hdfs.log.date)
 }
 
-// required int32 time = 2;
+// required int64 time = 2;
 inline bool log::has_time() const {
   return (_has_bits_[0] & 0x00000002u) != 0;
 }
@@ -266,20 +267,20 @@ inline void log::clear_has_time() {
   _has_bits_[0] &= ~0x00000002u;
 }
 inline void log::clear_time() {
-  time_ = 0;
+  time_ = GOOGLE_LONGLONG(0);
   clear_has_time();
 }
-inline ::google::protobuf::int32 log::time() const {
-  // @@protoc_insertion_point(field_get:proto.log.time)
+inline ::google::protobuf::int64 log::time() const {
+  // @@protoc_insertion_point(field_get:hadoop.hdfs.log.time)
   return time_;
 }
-inline void log::set_time(::google::protobuf::int32 value) {
+inline void log::set_time(::google::protobuf::int64 value) {
   set_has_time();
   time_ = value;
-  // @@protoc_insertion_point(field_set:proto.log.time)
+  // @@protoc_insertion_point(field_set:hadoop.hdfs.log.time)
 }
 
-// required int32 threadId = 3;
+// required int64 threadId = 3;
 inline bool log::has_threadid() const {
   return (_has_bits_[0] & 0x00000004u) != 0;
 }
@@ -290,20 +291,20 @@ inline void log::clear_has_threadid() {
   _has_bits_[0] &= ~0x00000004u;
 }
 inline void log::clear_threadid() {
-  threadid_ = 0;
+  threadid_ = GOOGLE_LONGLONG(0);
   clear_has_threadid();
 }
-inline ::google::protobuf::int32 log::threadid() const {
-  // @@protoc_insertion_point(field_get:proto.log.threadId)
+inline ::google::protobuf::int64 log::threadid() const {
+  // @@protoc_insertion_point(field_get:hadoop.hdfs.log.threadId)
   return threadid_;
 }
-inline void log::set_threadid(::google::protobuf::int32 value) {
+inline void log::set_threadid(::google::protobuf::int64 value) {
   set_has_threadid();
   threadid_ = value;
-  // @@protoc_insertion_point(field_set:proto.log.threadId)
+  // @@protoc_insertion_point(field_set:hadoop.hdfs.log.threadId)
 }
 
-// required .proto.log.FuncType type = 4;
+// required .hadoop.hdfs.log.FuncType type = 4;
 inline bool log::has_type() const {
   return (_has_bits_[0] & 0x00000008u) != 0;
 }
@@ -317,15 +318,15 @@ inline void log::clear_type() {
   type_ = 0;
   clear_has_type();
 }
-inline ::proto::log_FuncType log::type() const {
-  // @@protoc_insertion_point(field_get:proto.log.type)
-  return static_cast< ::proto::log_FuncType >(type_);
+inline ::hadoop::hdfs::log_FuncType log::type() const {
+  // @@protoc_insertion_point(field_get:hadoop.hdfs.log.type)
+  return static_cast< ::hadoop::hdfs::log_FuncType >(type_);
 }
-inline void log::set_type(::proto::log_FuncType value) {
-  assert(::proto::log_FuncType_IsValid(value));
+inline void log::set_type(::hadoop::hdfs::log_FuncType value) {
+  assert(::hadoop::hdfs::log_FuncType_IsValid(value));
   set_has_type();
   type_ = value;
-  // @@protoc_insertion_point(field_set:proto.log.type)
+  // @@protoc_insertion_point(field_set:hadoop.hdfs.log.type)
 }
 
 // optional string path = 5;
@@ -345,7 +346,7 @@ inline void log::clear_path() {
   clear_has_path();
 }
 inline const ::std::string& log::path() const {
-  // @@protoc_insertion_point(field_get:proto.log.path)
+  // @@protoc_insertion_point(field_get:hadoop.hdfs.log.path)
   return *path_;
 }
 inline void log::set_path(const ::std::string& value) {
@@ -354,7 +355,7 @@ inline void log::set_path(const ::std::string& value) {
     path_ = new ::std::string;
   }
   path_->assign(value);
-  // @@protoc_insertion_point(field_set:proto.log.path)
+  // @@protoc_insertion_point(field_set:hadoop.hdfs.log.path)
 }
 inline void log::set_path(const char* value) {
   set_has_path();
@@ -362,7 +363,7 @@ inline void log::set_path(const char* value) {
     path_ = new ::std::string;
   }
   path_->assign(value);
-  // @@protoc_insertion_point(field_set_char:proto.log.path)
+  // @@protoc_insertion_point(field_set_char:hadoop.hdfs.log.path)
 }
 inline void log::set_path(const char* value, size_t size) {
   set_has_path();
@@ -370,14 +371,14 @@ inline void log::set_path(const char* value, size_t size) {
     path_ = new ::std::string;
   }
   path_->assign(reinterpret_cast<const char*>(value), size);
-  // @@protoc_insertion_point(field_set_pointer:proto.log.path)
+  // @@protoc_insertion_point(field_set_pointer:hadoop.hdfs.log.path)
 }
 inline ::std::string* log::mutable_path() {
   set_has_path();
   if (path_ == &::google::protobuf::internal::GetEmptyStringAlreadyInited()) {
     path_ = new ::std::string;
   }
-  // @@protoc_insertion_point(field_mutable:proto.log.path)
+  // @@protoc_insertion_point(field_mutable:hadoop.hdfs.log.path)
   return path_;
 }
 inline ::std::string* log::release_path() {
@@ -401,7 +402,7 @@ inline void log::set_allocated_path(::std::string* path) {
     clear_has_path();
     path_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   }
-  // @@protoc_insertion_point(field_set_allocated:proto.log.path)
+  // @@protoc_insertion_point(field_set_allocated:hadoop.hdfs.log.path)
 }
 
 // repeated int64 argument = 6;
@@ -412,41 +413,42 @@ inline void log::clear_argument() {
   argument_.Clear();
 }
 inline ::google::protobuf::int64 log::argument(int index) const {
-  // @@protoc_insertion_point(field_get:proto.log.argument)
+  // @@protoc_insertion_point(field_get:hadoop.hdfs.log.argument)
   return argument_.Get(index);
 }
 inline void log::set_argument(int index, ::google::protobuf::int64 value) {
   argument_.Set(index, value);
-  // @@protoc_insertion_point(field_set:proto.log.argument)
+  // @@protoc_insertion_point(field_set:hadoop.hdfs.log.argument)
 }
 inline void log::add_argument(::google::protobuf::int64 value) {
   argument_.Add(value);
-  // @@protoc_insertion_point(field_add:proto.log.argument)
+  // @@protoc_insertion_point(field_add:hadoop.hdfs.log.argument)
 }
 inline const ::google::protobuf::RepeatedField< ::google::protobuf::int64 >&
 log::argument() const {
-  // @@protoc_insertion_point(field_list:proto.log.argument)
+  // @@protoc_insertion_point(field_list:hadoop.hdfs.log.argument)
   return argument_;
 }
 inline ::google::protobuf::RepeatedField< ::google::protobuf::int64 >*
 log::mutable_argument() {
-  // @@protoc_insertion_point(field_mutable_list:proto.log.argument)
+  // @@protoc_insertion_point(field_mutable_list:hadoop.hdfs.log.argument)
   return &argument_;
 }
 
 
 // @@protoc_insertion_point(namespace_scope)
 
-}  // namespace proto
+}  // namespace hdfs
+}  // namespace hadoop
 
 #ifndef SWIG
 namespace google {
 namespace protobuf {
 
-template <> struct is_proto_enum< ::proto::log_FuncType> : ::google::protobuf::internal::true_type {};
+template <> struct is_proto_enum< ::hadoop::hdfs::log_FuncType> : ::google::protobuf::internal::true_type {};
 template <>
-inline const EnumDescriptor* GetEnumDescriptor< ::proto::log_FuncType>() {
-  return ::proto::log_FuncType_descriptor();
+inline const EnumDescriptor* GetEnumDescriptor< ::hadoop::hdfs::log_FuncType>() {
+  return ::hadoop::hdfs::log_FuncType_descriptor();
 }
 
 }  // namespace google

@@ -11,7 +11,7 @@
 
 #include "log.pb.h"
 
-namespace iotools
+namespace hdfs
 {
 
 class Logger
@@ -35,7 +35,7 @@ public:
     bool logMessage(FuncType type, va_list &va);
     
 private:
-    int getTime();       //get time in millisecond and refresh current day
+    long getTime();       //get time in nanosecond and refresh current day
     
     pthread_mutex_t _mutex;
     int _current_day;

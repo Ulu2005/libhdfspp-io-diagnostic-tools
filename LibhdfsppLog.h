@@ -1,4 +1,4 @@
-/* Copyright (c) 2005 - 2011 Vertica, an HP company -*- C++ -*- */
+/* Copyright (c) 2005 - 2015 Vertica, an HP company -*- C++ -*- */
 
 #ifndef LIBHDFSPP_LOG_H_
 #define LIBHDFSPP_LOG_H_
@@ -6,7 +6,7 @@
 #include <cstdarg>
 #include "Logging.h"
 
-namespace iotools {
+namespace hdfs {
 
 #define LOG_ENABLE true
 

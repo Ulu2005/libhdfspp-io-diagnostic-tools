@@ -23,5 +23,9 @@ if(UNIX)
     set (CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic -std=c++11 -g")
 endif()
 
+if(APPLE)
+    set(CMAKE_CXX_FLAGS "-Wall -Wextra -std=c++11 -stdlib=libc++ -Wno-deprecated-declarations -g")
+endif()
+
 add_library(logger Logging.cc Logger.cc)
 target_link_libraries(logger "${CMAKE_THREAD_LIBS_INIT}")
