@@ -32,7 +32,7 @@ int main(int argc, const char* argv[]) {
     pbio::ZeroCopyInputStream* logFile = new pbio::FileInputStream(logFd);
     FILE* indexFile = fdopen(indexFd, "r"); 
     
-    int size;
+    int size, index(0);
     char buf[32];
     hadoop::hdfs::log msg;
 
@@ -40,13 +40,16 @@ int main(int argc, const char* argv[]) {
         if (fgets(buf, sizeof(buf), indexFile) == NULL) {
             break;
         } 
-
+        
+        index++;
         size = std::atoi(buf);
         if (!msg.ParseFromBoundedZeroCopyStream(logFile, size)) {
-            std::cerr << "failed to parse file" << std::endl;
+            std::cerr << "Failed to parse #" << index 
+                      << " log message." << std::endl;
             break;    
         }
-
+        
+        std::cout << "#" << index << std::endl;        
         printLogInfo(msg);
     }
 

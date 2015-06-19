@@ -6,7 +6,7 @@
 #define LIBHDFSPP_LOGGER_H_ 
 
 #include <cstdarg>
-#include <pthread.h>
+#include <mutex>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 
 #include "log.pb.h"
@@ -37,7 +37,7 @@ public:
 private:
     long getTime();       //get time in nanosecond and refresh current day
     
-    pthread_mutex_t _mutex;
+    std::mutex _mutex;
     int _current_day;
     FILE* _indexFile;
     google::protobuf::io::FileOutputStream* _logFile;

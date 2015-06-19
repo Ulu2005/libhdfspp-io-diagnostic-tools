@@ -16,14 +16,15 @@ int main(int argc, char *argv[])
 
     Logging::startLog(argv[1], argv[2]);
     
-    int a(1024), b(1), c(1);
-    char str[1024];
-    strcpy(str, "this is open path");
+    int flags(1), bufferSize(1), replication(1), blockSize(1);
+    int *fs(&flags), *ret(&bufferSize);
+    char path[64];
+    strcpy(path, "this is open path");
 
-    LOG_OPEN(&a, str, 11, 21, 31, 41);
-    LOG_OPEN_RET(&a);
-    LOG_CLOSE_RET(&b);
-    LOG_READ_RET(&c);
+    LOG_OPEN();
+    LOG_OPEN_RET(ret);
+    LOG_CLOSE_RET(ret);
+    LOG_READ_RET(ret);
    
     return 0;
 }

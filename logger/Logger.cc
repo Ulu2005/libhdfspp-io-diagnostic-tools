@@ -1,19 +1,21 @@
 /* Copyright (c) 2005 - 2015, Hewlett-Packard Development Co., L.P. */
 
 #include <iostream>
+#include <thread>
 #include <ctime>
 #include <unistd.h>
 #include <fcntl.h>
+#include <pthread.h>
 
 #include "Logger.h"
 
 using namespace hdfs;
 namespace pbio = google::protobuf::io;
 
-Logger logger;
+Logger ioLogger;
 
 Logger::Logger()
-    : _mutex(PTHREAD_MUTEX_INITIALIZER)
+    : _mutex()
     , _current_day(-1)
     , _indexFile(nullptr)
     , _logFile(nullptr)
@@ -22,8 +24,6 @@ Logger::Logger()
 
 Logger::~Logger()
 {
-    pthread_mutex_destroy(&_mutex);
-
     if (_indexFile != nullptr) {
         fclose(_indexFile);
         _indexFile = nullptr;
@@ -104,25 +104,21 @@ bool Logger::logMessage(FuncType type, va_list &va)
     va_end(va);
     
     //write log message and message size onto disk
-    pthread_mutex_lock(&_mutex);
-   
     int size = msg.ByteSize();
+    
+    std::lock_guard<std::mutex> lock(_mutex);
     if (fprintf(_indexFile, "%d\n", size) <= 0) {
         std::cerr << "failed to write message size." << std::endl;
-        pthread_mutex_unlock(&_mutex);
         return false;
     }
     fflush(_indexFile);
     
     if (!msg.SerializeToZeroCopyStream(_logFile)) {
         std::cerr << "failed to serialize log message." << std::endl;
-        pthread_mutex_unlock(&_mutex);
         return false;
     }
     _logFile->Flush(); 
 
-    pthread_mutex_unlock(&_mutex);
-    
     return true;
 }
 

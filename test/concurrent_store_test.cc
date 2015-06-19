@@ -20,12 +20,12 @@ int main(int argc, char *argv[])
 
     Logging::startLog(argv[1], argv[2]);
      
-    std::thread th[10]; 
-    for (int i = 0; i < 10; ++i) {
+    std::thread th[100]; 
+    for (int i = 0; i < 100; ++i) {
         th[i] = std::thread(test, i);
     }
 
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 100; ++i) {
         th[i].join();
     }
 
@@ -34,9 +34,12 @@ int main(int argc, char *argv[])
 
 void test(int n)
 {
-    char buf[64];
-    snprintf(buf, sizeof(buf), "crazy path #%d", n);
+    char path[64];
+    snprintf(path, sizeof(path), "crazy path #%d", n);
+     
+    int *fs(&n), *ret(&n);
+    int flags(n), bufferSize(n), replication(n), blockSize(n);
 
-    LOG_OPEN(&n, buf, n, n, n, n);
-    LOG_OPEN_RET(n);
+    LOG_OPEN();
+    LOG_OPEN_RET(ret);
 }

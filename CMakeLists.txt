@@ -15,9 +15,7 @@ if(NOT CMAKE_THREAD_LIBS_INIT)
 endif()
 
 include_directories(proto)
-
-add_subdirectory(proto)
-add_subdirectory(test)
+include_directories(logger)
 
 if(UNIX)
     set (CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic -std=c++11 -g")
@@ -27,5 +25,7 @@ if(APPLE)
     set(CMAKE_CXX_FLAGS "-Wall -Wextra -std=c++11 -stdlib=libc++ -Wno-deprecated-declarations -g")
 endif()
 
-add_library(logger Logging.cc Logger.cc)
-target_link_libraries(logger "${CMAKE_THREAD_LIBS_INIT}")
+add_subdirectory(proto)
+add_subdirectory(logger)
+add_subdirectory(replayer)
+add_subdirectory(test)

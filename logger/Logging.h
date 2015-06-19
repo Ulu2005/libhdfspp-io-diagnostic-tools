@@ -20,6 +20,8 @@ public:
     static void logMessage(Logger::FuncType type, ...);
 
 private:
+    static void appendPid(std::string &str);
+
     static std::string indexFilePath;
     static std::string logFilePath;
 };
