@@ -1,16 +1,12 @@
 // A basic reader for log file. 
 
 #include <iostream>
+#include <memory>
 #include <string>
-#include <cstdio>
-#include <cstdlib>
-#include <fcntl.h>
-#include <unistd.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 
 #include "log.pb.h"
-
-namespace pbio = ::google::protobuf::io;
+#include "LogReader.h"
 
 void printLogInfo(const hadoop::hdfs::log &msg);
 std::string getLogType(const hadoop::hdfs::log &msg);
@@ -21,43 +17,26 @@ int main(int argc, const char* argv[]) {
                   << " <log file> <index file>" << std::endl;
         return 0;
     } 
-
-    int logFd = open(argv[1], O_RDONLY);
-    int indexFd = open(argv[2], O_RDONLY);
-    if ((logFd == -1) || (indexFd == -1)) {
+    
+    hdfs::LogReader reader(argv[1], argv[2]);
+    if (!reader.isOK()) {
         std::cerr << "Failed to open file." << std::endl;
         return 0;
     }
 
-    pbio::ZeroCopyInputStream* logFile = new pbio::FileInputStream(logFd);
-    FILE* indexFile = fdopen(indexFd, "r"); 
-    
-    int size, index(0);
-    char buf[32];
-    hadoop::hdfs::log msg;
+    int index(0);
+    std::shared_ptr<hadoop::hdfs::log> msg;
 
-    while(!feof(indexFile)) {
-        if (fgets(buf, sizeof(buf), indexFile) == NULL) {
-            break;
-        } 
-        
+    while((msg = reader.next()) != nullptr) {
         index++;
-        size = std::atoi(buf);
-        if (!msg.ParseFromBoundedZeroCopyStream(logFile, size)) {
-            std::cerr << "Failed to parse #" << index 
-                      << " log message." << std::endl;
-            break;    
-        }
-        
         std::cout << "#" << index << std::endl;        
-        printLogInfo(msg);
+        printLogInfo(*msg);
     }
 
-    close(logFd);
-    close(indexFd);
     return 0;
 }
 
+/* Print log message */
 void printLogInfo(const hadoop::hdfs::log &msg)
 {
     std::cout << "date: " << msg.date() << std::endl; 
@@ -80,6 +59,7 @@ void printLogInfo(const hadoop::hdfs::log &msg)
     std::cout << std::dec << " " << std::endl; 
 }
 
+/* Get string of log FuncType */
 std::string getLogType(const hadoop::hdfs::log &msg)
 {
     switch (msg.type()) {

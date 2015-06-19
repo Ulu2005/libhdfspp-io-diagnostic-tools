@@ -6,14 +6,6 @@ set (CMAKE_BUILD_TYPE "Debug")
 find_package(Protobuf REQUIRED)
 find_package(Threads REQUIRED)
 
-if (NOT Protobuf_FOUND)
-    message(STATUS "Google Protobuf not found. Cannot compile.")
-endif()
-
-if(NOT CMAKE_THREAD_LIBS_INIT)
-    message(STATUS "Threads library not found. Cannot compile.")
-endif()
-
 include_directories(proto)
 include_directories(logger)
 
