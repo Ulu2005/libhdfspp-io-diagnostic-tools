@@ -19,20 +19,22 @@ int main(int argc, const char* argv[]) {
     } 
     
     hdfs::LogReader reader(argv[1], argv[2]);
-    if (!reader.isOK()) {
-        std::cerr << "Failed to open file." << std::endl;
-        return 0;
-    }
-
     int index(0);
-    std::shared_ptr<hadoop::hdfs::log> msg;
+    hadoop::hdfs::log* msg = nullptr;
 
     while((msg = reader.next()) != nullptr) {
         index++;
-        std::cout << "#" << index << std::endl;        
+        std::cout << "#" << index << std::endl;
+       
         printLogInfo(*msg);
+        delete msg;
     }
 
+    if (!reader.isEOF()) {
+        std::cerr << "Failed to parse log #" << (++index) << std::endl;
+    }
+    
+    reader.close();
     return 0;
 }
 
@@ -55,7 +57,7 @@ void printLogInfo(const hadoop::hdfs::log &msg)
             std::cout << std::dec << "\t" << msg.argument(i) << std::endl; 
         }
     }
-    
+
     std::cout << std::dec << " " << std::endl; 
 }
 

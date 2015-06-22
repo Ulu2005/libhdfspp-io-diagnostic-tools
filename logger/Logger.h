@@ -40,7 +40,7 @@ private:
     std::mutex _mutex;
     int _current_day;
     FILE* _indexFile;
-    google::protobuf::io::FileOutputStream* _logFile;
+    ::google::protobuf::io::FileOutputStream* _logFile;
 };
  
 } /* iotools */ 

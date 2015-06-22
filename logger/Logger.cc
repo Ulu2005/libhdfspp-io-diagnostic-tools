@@ -9,8 +9,8 @@
 
 #include "Logger.h"
 
-using namespace hdfs;
-namespace pbio = google::protobuf::io;
+using namespace hdfs; 
+namespace pbio = google::protobuf::io; 
 
 Logger ioLogger;
 

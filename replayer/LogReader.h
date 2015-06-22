@@ -20,15 +20,17 @@ public:
     LogReader(const char* logPath, const char* indexPath);
     virtual ~LogReader();
     
-    bool isOK();    
+    void close(); 
+    bool isEOF();
     bool setPath(const char* logPath, const char* indexPath); 
-    std::shared_ptr<hadoop::hdfs::log> next();
+    ::hadoop::hdfs::log* next();
 
 private:
 
-    bool _isOK; 
+    bool _isOK;
+    bool _isEOF;
     FILE* _indexFile; 
-    google::protobuf::io::FileInputStream* _logFile;
+    ::google::protobuf::io::FileInputStream* _logFile;
 };
 
 } /* hdfs */ 
