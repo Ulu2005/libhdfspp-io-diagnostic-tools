@@ -1,3 +1,5 @@
+/* Copyright (c) 2005 - 2015, Hewlett-Packard Development Co., L.P. */
+
 #include <memory>
 #include <fcntl.h>
 #include <unistd.h>
@@ -91,6 +93,7 @@ bool LogReader::setPath(const char* logPath, const char* indexPath)
     ::hadoop::hdfs::log* msg = new ::hadoop::hdfs::log();
     if (!msg->ParseFromBoundedZeroCopyStream(_logFile, size)) {
         _isOK = false;
+        delete msg;
         return nullptr; 
     }
 

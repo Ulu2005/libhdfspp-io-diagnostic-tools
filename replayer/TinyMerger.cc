@@ -10,6 +10,9 @@
 
 #include "LogReader.h"
 
+#define LOGNAME "log_merged.log"
+#define INDEXNAME "index_mergerd.log"
+
 using namespace hdfs;
 
 static FILE* newIndexFile = nullptr;
@@ -34,29 +37,43 @@ int main(int argc, char *argv[])
     //initialize readers and output file stream
     DIR* dir = opendir(argv[1]);
     if (dir == NULL) {
-        std::cout << "Failed to open directory." << std::endl;
+        std::cout << "Failed to open log file directory." << std::endl;
         return 0; 
     }
-   
-    std::string outIndex("./index_1111.log"), outLog("./log_1111.log");
+    
+    std::string outDir(argv[2]), outIndex, outLog; 
+    if (outDir.at(outDir.size() - 1) != '/') {
+        outDir.append("/");
+    }
+
+    outIndex = outDir + INDEXNAME;
+    outLog = outDir + LOGNAME;
+
     mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
     int logFileFd = open(outLog.c_str(), O_CREAT | O_WRONLY | O_TRUNC, mode);
-
-    newLogFile = new ::google::protobuf::io::FileOutputStream(logFileFd);
     newIndexFile = fopen(outIndex.c_str(), "w+");
+    if ((logFileFd == -1) || (newIndexFile == NULL)) {
+        std::cout << "Failed to create merged log file." << std::endl;
+        return 0; 
+    }
     
-    std::vector<LogReader> readers = getReaders(argv[1], getFiles(dir));
+    newLogFile = new ::google::protobuf::io::FileOutputStream(logFileFd);
   
     //merge log files 
+    std::vector<LogReader> readers = getReaders(argv[1], getFiles(dir));
+    
     std::cout << "Start to merge log files." << std::endl;
    
     mergeLog(readers);
     
+    //close files 
     for (auto r : readers) {
         r.close();
     }
+
     fclose(newIndexFile);
     newLogFile->Close();
+    delete newLogFile;
     closedir(dir);
    
     std::cout << "Finish merging log files." << std::endl; //TODO count time?
@@ -66,18 +83,16 @@ int main(int argc, char *argv[])
 /* Put all file names in a folder into a vector */
 std::vector<std::string> getFiles(DIR* dir)
 {
-    std::vector<std::string> tmp, files;
+    std::vector<std::string> files;
     struct dirent* entry;
 
     while ((entry = readdir(dir)) != NULL) {
-        tmp.push_back(std::string(entry->d_name));
-    }
+        std::string name(entry->d_name);
 
-    for (auto s : tmp) {
-        if (s.find("log_") != std::string::npos) {
-            files.push_back(s); 
-        } else if (s.find("index_") != std::string::npos) {
-            files.push_back(s); 
+        if (name.find("log_") != std::string::npos) {
+            files.push_back(name); 
+        } else if (name.find("index_") != std::string::npos) {
+            files.push_back(name); 
         }
     }
 

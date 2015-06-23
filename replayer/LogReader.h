@@ -1,6 +1,7 @@
 /* Copyright (c) 2005 - 2015, Hewlett-Packard Development Co., L.P. */
 
-// 
+//This class works as a reader to log, which includes a log file and 
+//a index file 
 
 #ifndef LIBHDFSPP_READER_H_
 #define LIBHDFSPP_READER_H_ 
