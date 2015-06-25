@@ -176,6 +176,7 @@ void mergeLog(std::vector<LogReader> &readers)
 int findMinMsg(const std::vector<hadoop::hdfs::log*> msgs)
 {
     int min = -1;
+    int min_date = -1;
     long min_time = -1;
 
     for (int i = 0; i < (int)msgs.size(); ++i) {
@@ -185,8 +186,10 @@ int findMinMsg(const std::vector<hadoop::hdfs::log*> msgs)
             continue;
         }
 
-        if ((min_time == -1) || (msg->time() < min_time)) {
+        if ((min == -1) || 
+            ((msg->date() <= min_date) && (msg->time() < min_time))) {
             min = i;
+            min_date = msg->date();
             min_time = msg->time(); 
         }
     }

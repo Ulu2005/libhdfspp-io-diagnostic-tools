@@ -6,7 +6,6 @@
 #ifndef LIBHDFSPP_READER_H_
 #define LIBHDFSPP_READER_H_ 
 
-#include <memory>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 
 #include "log.pb.h"

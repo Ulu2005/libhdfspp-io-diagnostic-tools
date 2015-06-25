@@ -1,11 +1,8 @@
 // A basic reader for log file. 
 
 #include <iostream>
-#include <memory>
 #include <string>
-#include <google/protobuf/io/zero_copy_stream_impl.h>
 
-#include "log.pb.h"
 #include "LogReader.h"
 
 void printLogInfo(const hadoop::hdfs::log &msg);
