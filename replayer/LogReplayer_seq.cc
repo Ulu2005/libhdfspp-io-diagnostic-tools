@@ -5,7 +5,6 @@
 #include "LogReader.h"
 
 static std::map<long, hdfsFile> files; //mapping between logged hdfsFile --> hdfsFile
-static std::map<long, int> read_count; //mapping between logged thread id --> current reads
 static hdfsFS fs(nullptr);
 
 void handleOpen(const hadoop::hdfs::log* msg);
