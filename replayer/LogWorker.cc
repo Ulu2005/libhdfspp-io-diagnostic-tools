@@ -95,7 +95,6 @@ void LogWorker::handleRead(const hadoop::hdfs::log* msg)
 {
     auto file = _files.find(msg->argument(1));
     if (file != _files.end()) {
-        //allocate buffer if current one is not enough
         size_t buf_size = msg->argument(4);
         char* buffer = new char[buf_size];
 
