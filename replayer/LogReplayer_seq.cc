@@ -1,4 +1,5 @@
 #include <map>
+#include <chrono>
 #include <iostream>
 
 #include "chdfs.h"
@@ -24,6 +25,10 @@ int main(int argc, const char* argv[]) {
 
     int index(0);
     hadoop::hdfs::log* msg(nullptr);
+    std::chrono::time_point<std::chrono::system_clock> start, end;
+
+    std::cout << "Start replaying file operations." << std::endl;
+    start = std::chrono::system_clock::now();
     
     while((msg = reader.next()) != nullptr) {
         switch (msg->type()) {
@@ -40,14 +45,19 @@ int main(int argc, const char* argv[]) {
                 handleRead(msg);
                 break;
             default:
-                ;
+                delete msg;
         } 
 
         index++;
     }
+    
+    end = std::chrono::system_clock::now();
+    std::chrono::duration<double> time = end - start;
 
     if (!reader.isEOF()) {
         std::cerr << "Failed to parse log #" << (++index) << std::endl;
+    } else {
+        std::cout << "Total time: " << time.count() << " seconds. Total file operations: " << index / 2 << "." << std::endl; 
     }
     
     reader.close();
