@@ -7,6 +7,7 @@
 #include "chdfs.h"
 #include "LogReader.h"
 
+static const unsigned threads_max = std::thread::hardware_concurrency() * 2;
 static hdfsFS fs(nullptr);
 static std::map<long, hdfsFile> files; //mapping between logged hdfsFile --> hdfsFile
 static std::vector<hadoop::hdfs::log*> jobs;
@@ -88,13 +89,21 @@ void handleJobs()
             default:
                 ;
         }
+
+        if (threads.size() == threads_max) { //avoid too many requests to hdfs
+            for (int i = 0; i < (int)threads.size(); ++i) {
+                threads[i].join(); 
+            }
+
+            threads.clear(); 
+        }
     }
     
-    jobs.clear();
-
     for (int i = 0; i < (int)threads.size(); ++i) {
         threads[i].join(); 
     }
+    
+    jobs.clear();
 }
 
 void handleOpen(const hadoop::hdfs::log* msg)
@@ -120,7 +129,6 @@ void handleRead(const hadoop::hdfs::log* msg)
 {
     auto file = files.find(msg->argument(1));
     if (file != files.end()) {
-        //allocate buffer if current one is not enough
         size_t buf_size = msg->argument(4);
         char* buffer = new char[buf_size];
 
