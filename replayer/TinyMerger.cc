@@ -23,7 +23,7 @@ std::string getPid(const std::string str);
 std::vector<LogReader> getReaders(const char* parent, 
                                   const std::vector<std::string> files);
 void mergeLog(std::vector<LogReader> &readers);
-int findMinMsg(const std::vector<hadoop::hdfs::log*> msgs);
+int findMinMsg(const std::vector<std::unique_ptr<hadoop::hdfs::log>> &msgs);
 
 int main(int argc, char *argv[])
 {
@@ -142,7 +142,7 @@ std::vector<LogReader> getReaders(const char* parent,
 /* Read from multiple log files and merge them into a new one  */
 void mergeLog(std::vector<LogReader> &readers)
 {
-    std::vector<hadoop::hdfs::log*> msgs;
+    std::vector<std::unique_ptr<hadoop::hdfs::log>> msgs;
     for (auto r : readers) {
        msgs.push_back(r.next());
     }
@@ -167,30 +167,27 @@ void mergeLog(std::vector<LogReader> &readers)
         }
 
         // get a new msg from same reader
-        delete msgs.at(index);
         msgs.at(index) = readers.at(index).next();
     }
 }
 
 /* Find index of message with min time, retur -1 if all messages are nullptr */
-int findMinMsg(const std::vector<hadoop::hdfs::log*> msgs)
+int findMinMsg(const std::vector<std::unique_ptr<hadoop::hdfs::log>> &msgs)
 {
     int min = -1;
     int min_date = -1;
     long min_time = -1;
 
     for (int i = 0; i < (int)msgs.size(); ++i) {
-        auto msg = msgs.at(i);
-
-        if (msg == nullptr) {
+        if (msgs[i] == nullptr) {
             continue;
         }
 
         if ((min == -1) || 
-            ((msg->date() <= min_date) && (msg->time() < min_time))) {
+            ((msgs[i]->date() <= min_date) && (msgs[i]->time() < min_time))) {
             min = i;
-            min_date = msg->date();
-            min_time = msg->time(); 
+            min_date = msgs[i]->date();
+            min_time = msgs[i]->time(); 
         }
     }
 

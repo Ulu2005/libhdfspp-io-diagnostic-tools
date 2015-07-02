@@ -2,16 +2,16 @@
 #include <chrono>
 #include <iostream>
 
-#include "chdfs.h"
+#include "libhdfs++/chdfs.h"
 #include "LogReader.h"
 
 static std::map<long, hdfsFile> files; //mapping between logged hdfsFile --> hdfsFile
 static hdfsFS fs(nullptr);
 
-void handleOpen(const hadoop::hdfs::log* msg);
-void handleOpenRet(const hadoop::hdfs::log* msg);
-void handleRead(const hadoop::hdfs::log* msg);
-void handleClose(const hadoop::hdfs::log* msg);
+void handleOpen(const hadoop::hdfs::log &msg);
+void handleOpenRet(const hadoop::hdfs::log &msg);
+void handleRead(const hadoop::hdfs::log &msg);
+void handleClose(const hadoop::hdfs::log &msg);
 
 int main(int argc, const char* argv[]) {
     if (argc != 5) {
@@ -24,7 +24,7 @@ int main(int argc, const char* argv[]) {
     fs = hdfsConnect(argv[3], std::atoi(argv[4])); 
 
     int index(0);
-    hadoop::hdfs::log* msg(nullptr);
+    std::unique_ptr<hadoop::hdfs::log> msg;
     std::chrono::time_point<std::chrono::system_clock> start, end;
 
     std::cout << "Start replaying file operations." << std::endl;
@@ -33,19 +33,19 @@ int main(int argc, const char* argv[]) {
     while((msg = reader.next()) != nullptr) {
         switch (msg->type()) {
             case hadoop::hdfs::log_FuncType_OPEN:
-                handleOpen(msg);
+                handleOpen(*msg);
                 break;
             case hadoop::hdfs::log_FuncType_OPEN_RET:
-                handleOpenRet(msg);
+                handleOpenRet(*msg);
                 break;
             case hadoop::hdfs::log_FuncType_CLOSE:
-                handleClose(msg);
+                handleClose(*msg);
                 break;
             case hadoop::hdfs::log_FuncType_READ:
-                handleRead(msg);
+                handleRead(*msg);
                 break;
             default:
-                delete msg;
+                ;
         } 
 
         index++;
@@ -66,35 +66,33 @@ int main(int argc, const char* argv[]) {
     return 0;
 }
 
-void handleOpen(const hadoop::hdfs::log* msg)
+void handleOpen(const hadoop::hdfs::log &msg)
 {
-    hdfsFile file = hdfsOpenFile(fs, msg->path().c_str(), 
-                                (int)msg->argument(1), 
-                                (int)msg->argument(2), 
-                                (short)msg->argument(3), 
-                                (int)msg->argument(4));
+    hdfsFile file = hdfsOpenFile(fs, msg.path().c_str(), 
+                                (int)msg.argument(1), 
+                                (int)msg.argument(2), 
+                                (short)msg.argument(3), 
+                                (int)msg.argument(4));
     
-    files[msg->threadid()] = file;
-    delete msg;
+    files[msg.threadid()] = file;
 }
 
-void handleOpenRet(const hadoop::hdfs::log* msg)
+void handleOpenRet(const hadoop::hdfs::log &msg)
 {
-    files[msg->argument(0)] = files[msg->threadid()];
-    files.erase(msg->threadid());
-    delete msg;
+    files[msg.argument(0)] = files[msg.threadid()];
+    files.erase(msg.threadid());
 }
 
-void handleRead(const hadoop::hdfs::log* msg)
+void handleRead(const hadoop::hdfs::log &msg)
 {
-    auto file = files.find(msg->argument(1));
+    auto file = files.find(msg.argument(1));
     if (file != files.end()) {
         //allocate buffer if current one is not enough
-        size_t buf_size = msg->argument(4);
+        size_t buf_size = msg.argument(4);
         char* buffer = new char[buf_size];
 
         auto ret = hdfsPread(fs, file->second, 
-                             (off_t)msg->argument(2), 
+                             (off_t)msg.argument(2), 
                              reinterpret_cast<void*>(buffer), 
                              buf_size);
     
@@ -102,24 +100,20 @@ void handleRead(const hadoop::hdfs::log* msg)
         delete[] buffer;
     } else {
         std::cerr << "Read: file " 
-                  << msg->argument(1) 
+                  << msg.argument(1) 
                   << "not found." << std::endl;
     }
-    
-    delete msg;
 }
 
-void handleClose(const hadoop::hdfs::log* msg)
+void handleClose(const hadoop::hdfs::log &msg)
 {
-    auto file = files.find(msg->argument(1));
+    auto file = files.find(msg.argument(1));
     if (file != files.end()) {
         auto ret = hdfsCloseFile(fs, file->second);
         (void)ret;//make gcc happy
     } else {
         std::cerr << "Close: file " 
-                  << msg->argument(1) 
+                  << msg.argument(1) 
                   << "not found." << std::endl;
     }
-    
-    delete msg;
 }

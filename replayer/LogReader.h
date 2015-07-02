@@ -6,6 +6,7 @@
 #ifndef LIBHDFSPP_READER_H_
 #define LIBHDFSPP_READER_H_ 
 
+#include <memory>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 
 #include "log.pb.h"
@@ -23,7 +24,7 @@ public:
     void close(); 
     bool isEOF();
     bool setPath(const char* logPath, const char* indexPath); 
-    ::hadoop::hdfs::log* next();
+    std::unique_ptr<hadoop::hdfs::log> next();
 
 private:
 

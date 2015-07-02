@@ -17,14 +17,13 @@ int main(int argc, const char* argv[]) {
     
     hdfs::LogReader reader(argv[1], argv[2]);
     int index(0);
-    hadoop::hdfs::log* msg = nullptr;
+    std::unique_ptr<hadoop::hdfs::log> msg;
 
     while((msg = reader.next()) != nullptr) {
         index++;
         std::cout << "#" << index << std::endl;
        
         printLogInfo(*msg);
-        delete msg;
     }
 
     if (!reader.isEOF()) {

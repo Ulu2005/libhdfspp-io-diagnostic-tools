@@ -4,20 +4,20 @@
 #include <thread>
 #include <iostream>
 
-#include "chdfs.h"
+#include "libhdfs++/chdfs.h"
 #include "LogReader.h"
 
 static const unsigned threads_max = std::thread::hardware_concurrency() * 2;
 static hdfsFS fs(nullptr);
 static std::map<long, hdfsFile> files; //mapping between logged hdfsFile --> hdfsFile
-static std::vector<hadoop::hdfs::log*> jobs;
+static std::vector<std::unique_ptr<hadoop::hdfs::log>> jobs;
 
 void handleJobs();
 
-void handleOpen(const hadoop::hdfs::log* msg);
-void handleOpenRet(const hadoop::hdfs::log* msg);
-void handleRead(const hadoop::hdfs::log* msg);
-void handleClose(const hadoop::hdfs::log* msg);
+void handleOpen(const hadoop::hdfs::log &msg);
+void handleOpenRet(const hadoop::hdfs::log &msg);
+void handleRead(const hadoop::hdfs::log &msg);
+void handleClose(const hadoop::hdfs::log &msg);
 
 int main(int argc, const char* argv[]) {
     if (argc != 5) {
@@ -30,7 +30,7 @@ int main(int argc, const char* argv[]) {
     fs = hdfsConnect(argv[3], std::atoi(argv[4])); 
 
     int index(0);
-    hadoop::hdfs::log* msg(nullptr);
+    std::unique_ptr<hadoop::hdfs::log> msg;
     std::chrono::time_point<std::chrono::system_clock> start, end;
 
     std::cout << "Start replaying file operations." << std::endl;
@@ -39,20 +39,20 @@ int main(int argc, const char* argv[]) {
     while((msg = reader.next()) != nullptr) {
         switch (msg->type()) {
             case hadoop::hdfs::log_FuncType_OPEN:
-                handleOpen(msg);
+                handleOpen(*msg);
                 break;
             case hadoop::hdfs::log_FuncType_OPEN_RET:
-                handleOpenRet(msg);
+                handleOpenRet(*msg);
                 break;
             case hadoop::hdfs::log_FuncType_CLOSE:
                 handleJobs(); //handle all jobs in vector and join the work threads here
-                handleClose(msg);
+                handleClose(*msg);
                 break;
             case hadoop::hdfs::log_FuncType_READ:
-                jobs.push_back(msg); //push into vector and handle before close
+                jobs.push_back(std::move(msg)); //push into vector and handle before close
                 break;
             default:
-                delete msg;
+                ;
         } 
 
         index++;
@@ -81,10 +81,10 @@ void handleJobs()
     }
 
     std::vector<std::thread> threads;
-    for (auto msg : jobs) {
-        switch (msg->type()) { //TODO: add other types of operations, like write, stat
+    for (int i = 0; i < (int)jobs.size(); ++i) {
+        switch (jobs[i]->type()) { //TODO: add other types of operations, like write, stat
             case hadoop::hdfs::log_FuncType_READ:
-                threads.push_back(std::thread(handleRead, msg)); 
+                threads.push_back(std::thread(handleRead, *jobs[i])); 
                 break;
             default:
                 ;
@@ -106,34 +106,32 @@ void handleJobs()
     jobs.clear();
 }
 
-void handleOpen(const hadoop::hdfs::log* msg)
+void handleOpen(const hadoop::hdfs::log &msg)
 {
-    hdfsFile file = hdfsOpenFile(fs, msg->path().c_str(), 
-                                (int)msg->argument(1), 
-                                (int)msg->argument(2), 
-                                (short)msg->argument(3), 
-                                (int)msg->argument(4));
+    hdfsFile file = hdfsOpenFile(fs, msg.path().c_str(), 
+                                (int)msg.argument(1), 
+                                (int)msg.argument(2), 
+                                (short)msg.argument(3), 
+                                (int)msg.argument(4));
     
-    files[msg->threadid()] = file;
-    delete msg;
+    files[msg.threadid()] = file;
 }
 
-void handleOpenRet(const hadoop::hdfs::log* msg)
+void handleOpenRet(const hadoop::hdfs::log &msg)
 {
-    files[msg->argument(0)] = files[msg->threadid()];
-    files.erase(msg->threadid());
-    delete msg;
+    files[msg.argument(0)] = files[msg.threadid()];
+    files.erase(msg.threadid());
 }
 
-void handleRead(const hadoop::hdfs::log* msg)
+void handleRead(const hadoop::hdfs::log &msg)
 {
-    auto file = files.find(msg->argument(1));
+    auto file = files.find(msg.argument(1));
     if (file != files.end()) {
-        size_t buf_size = msg->argument(4);
+        size_t buf_size = msg.argument(4);
         char* buffer = new char[buf_size];
 
         auto ret = hdfsPread(fs, file->second, 
-                             (off_t)msg->argument(2), 
+                             (off_t)msg.argument(2), 
                              reinterpret_cast<void*>(buffer), 
                              buf_size);
     
@@ -141,24 +139,20 @@ void handleRead(const hadoop::hdfs::log* msg)
         delete[] buffer;
     } else {
         std::cerr << "Read: file " 
-                  << msg->argument(1) 
+                  << msg.argument(1) 
                   << "not found." << std::endl;
     }
-    
-    delete msg;
 }
 
-void handleClose(const hadoop::hdfs::log* msg)
+void handleClose(const hadoop::hdfs::log &msg)
 {
-    auto file = files.find(msg->argument(1));
+    auto file = files.find(msg.argument(1));
     if (file != files.end()) {
         auto ret = hdfsCloseFile(fs, file->second);
         (void)ret;//make gcc happy
     } else {
         std::cerr << "Close: file " 
-                  << msg->argument(1) 
+                  << msg.argument(1) 
                   << "not found." << std::endl;
     }
-    
-    delete msg;
 }

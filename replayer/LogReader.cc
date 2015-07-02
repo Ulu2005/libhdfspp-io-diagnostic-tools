@@ -1,6 +1,5 @@
 /* Copyright (c) 2005 - 2015, Hewlett-Packard Development Co., L.P. */
 
-#include <memory>
 #include <fcntl.h>
 #include <unistd.h>
 
@@ -72,7 +71,7 @@ bool LogReader::setPath(const char* logPath, const char* indexPath)
     return true;
 }
 
-::hadoop::hdfs::log* LogReader::next()
+std::unique_ptr<hadoop::hdfs::log> LogReader::next()
 {
     if (_isEOF || (!_isOK)) {
         return nullptr;
@@ -90,10 +89,9 @@ bool LogReader::setPath(const char* logPath, const char* indexPath)
     }
 
     int size = std::atoi(buf);
-    ::hadoop::hdfs::log* msg = new ::hadoop::hdfs::log();
+    std::unique_ptr<hadoop::hdfs::log> msg(new hadoop::hdfs::log());
     if (!msg->ParseFromBoundedZeroCopyStream(_logFile, size)) {
         _isOK = false;
-        delete msg;
         return nullptr; 
     }
 
