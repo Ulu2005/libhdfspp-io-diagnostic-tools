@@ -1,6 +1,7 @@
 /* Copyright (c) 2005 - 2015, Hewlett-Packard Development Co., L.P. */
 
 #include <cstdarg>
+#include <iostream>
 #include <unistd.h>
 
 #include "Logging.h"
@@ -12,18 +13,10 @@ extern Logger ioLogger;
 
 std::string Logging::indexFilePath("");
 std::string Logging::logFilePath("");
-
+bool Logging::failed = false;
 
 void Logging::startLog(const char* logFile, const char* indexFile)
 {
-    if (indexFilePath != "") {
-    //TODO: close file and get a new name? 
-    }
-
-    if (logFilePath != "") {
-    //TODO: close file and get a new name? 
-    }
-    
     logFilePath = logFile;
     indexFilePath = indexFile;
    
@@ -31,14 +24,17 @@ void Logging::startLog(const char* logFile, const char* indexFile)
     appendPid(indexFilePath);
 
     if (!ioLogger.startLog(logFilePath.c_str(), indexFilePath.c_str())) {
-        exit(1);  
+        std::cerr << "Failed to start IO logger." << std::endl;
+        failed = true;
     }
-
-    //TODO: more initialization work
 }
 
 void Logging::logMessage(Logger::FuncType type, ...)
 {
+    if (failed) {
+        return;
+    }
+
     va_list va;
     va_start(va, type);
     ioLogger.logMessage(type, va);

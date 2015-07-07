@@ -3,6 +3,7 @@
 #include <string>
 #include <cstring>
 #include <iostream>
+#include <chrono>
 #include <sys/types.h>
 #include <dirent.h>
 #include <fcntl.h>
@@ -60,9 +61,11 @@ int main(int argc, char *argv[])
     newLogFile = new ::google::protobuf::io::FileOutputStream(logFileFd);
   
     //merge log files 
+    std::chrono::time_point<std::chrono::system_clock> start, end;
     std::vector<LogReader> readers = getReaders(argv[1], getFiles(dir));
     
     std::cout << "Start to merge log files." << std::endl;
+    start = std::chrono::system_clock::now();
    
     mergeLog(readers);
     
@@ -76,7 +79,10 @@ int main(int argc, char *argv[])
     delete newLogFile;
     closedir(dir);
    
-    std::cout << "Finish merging log files." << std::endl; //TODO count time?
+    end = std::chrono::system_clock::now();
+    std::chrono::duration<double> time = end - start;
+    std::cout << "Finish merging log files in " << time.count() << "s." << std::endl;
+    
     return 0;
 }
 
@@ -157,12 +163,12 @@ void mergeLog(std::vector<LogReader> &readers)
         // output min msg
         int size = msgs.at(index)->ByteSize();
         if (fprintf(newIndexFile, "%d\n", size) <= 0) {
-            std::cerr << "Failure index" << std::endl; //TODO more detailed error info
+            std::cerr << "Failed to write index file." << std::endl;
             break;
         }
 
         if (!msgs.at(index)->SerializeToZeroCopyStream(newLogFile)) {
-            std::cerr << "Failure log" << std::endl; //TODO more detailed error info
+            std::cerr << "Failed to write log file." << std::endl;
             break;
         }
 

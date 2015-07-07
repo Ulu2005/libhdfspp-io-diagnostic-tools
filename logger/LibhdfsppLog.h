@@ -9,8 +9,8 @@
 namespace hdfs {
 
 #define LOG_ENABLE true
-#define LOG_PATH "TODO"
-#define INDEX_PATH "TODO"
+#define LOG_PATH "PUT_LOG_PATH_HERE"
+#define INDEX_PATH "PUT_INDEX_PATH_HERE"
 
 #define LOG_START() do {\
     if (LOG_ENABLE)\

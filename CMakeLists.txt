@@ -6,6 +6,7 @@ set (CMAKE_BUILD_TYPE "Debug")
 find_package(Protobuf REQUIRED)
 find_package(Threads REQUIRED)
 
+include_directories(utility)
 include_directories(proto)
 include_directories(logger)
 

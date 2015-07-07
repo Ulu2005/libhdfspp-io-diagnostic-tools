@@ -24,6 +24,7 @@ private:
 
     static std::string indexFilePath;
     static std::string logFilePath;
+    static bool failed;
 };
 
 } /* iotools */ 
