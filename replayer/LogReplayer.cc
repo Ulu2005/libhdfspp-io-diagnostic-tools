@@ -6,11 +6,13 @@
 
 #include "libhdfs++/chdfs.h"
 #include "LogReader.h"
+#include "CmlParser.h"
 
 static const unsigned threads_max = std::thread::hardware_concurrency() * 2;
 static hdfsFS fs(nullptr);
 static std::map<long, hdfsFile> files; //mapping between logged hdfsFile --> hdfsFile
 static std::vector<std::unique_ptr<hadoop::hdfs::log>> jobs;
+static bool wait_before_new_thread = false;
 
 void handleJobs();
 
@@ -20,14 +22,16 @@ void handleRead(const hadoop::hdfs::log &msg);
 void handleClose(const hadoop::hdfs::log &msg);
 
 int main(int argc, const char* argv[]) {
-    if (argc != 5) {
-        std::cout << "Usage: " << argv[0] << " <log file> <index file> ";
-        std::cout << "<host> <port>" << std::endl;
+    hdfs::CmlParser cml(argc, argv);
+    if (cml.getArgSize() != 4) {
+        std::cout << "Usage: " << cml.getProgName() << " [-w|--wait] ";
+        std::cout << "<log file> <index file> " << "<host> <port>" << std::endl;
         return 0;
-    } 
+    }
+    wait_before_new_thread = cml.getFlag("w") || cml.getFlag("wait");
    
-    hdfs::LogReader reader(argv[1], argv[2]);
-    fs = hdfsConnect(argv[3], std::atoi(argv[4])); 
+    hdfs::LogReader reader(cml.getArg(0).c_str(), cml.getArg(1).c_str());
+    fs = hdfsConnect(cml.getArg(2).c_str(), std::atoi(cml.getArg(3).c_str())); 
 
     int index(0);
     std::unique_ptr<hadoop::hdfs::log> msg;
@@ -81,8 +85,16 @@ void handleJobs()
     }
 
     std::vector<std::thread> threads;
+    long last_time = jobs[0]->time();
+
     for (int i = 0; i < (int)jobs.size(); ++i) {
-        switch (jobs[i]->type()) { //TODO: add other types of operations, like write, stat
+        if (wait_before_new_thread) {
+            long time = jobs[i]->time();
+            std::this_thread::sleep_for(std::chrono::nanoseconds(time - last_time));
+            last_time = time;
+        }
+
+        switch (jobs[i]->type()) {
             case hadoop::hdfs::log_FuncType_READ:
                 threads.push_back(std::thread(handleRead, *jobs[i])); 
                 break;

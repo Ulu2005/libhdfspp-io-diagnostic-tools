@@ -19,10 +19,10 @@ public:
             std::string arg(argv[i]);
             auto begin = arg.find("--");
 
-            if (begin != std::string::npos) {
+            if (begin == 0) {//start with "--"
                 arg = arg.substr(begin + 2);
                 flags[arg] = true;
-            } else if ((begin = arg.find("-")) != std::string::npos) {
+            } else if ((begin = arg.find("-")) == 0) {//start with "-"
                 arg = arg.substr(begin + 1);
                 flags[arg] = true;
             } else {
