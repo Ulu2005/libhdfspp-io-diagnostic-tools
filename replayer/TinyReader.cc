@@ -12,6 +12,8 @@ static int close_count = 0;
 static int close_ret_count = 0;
 static int read_count = 0;
 static int read_ret_count = 0;
+static int start_date = 0;
+static int end_date = 0;
 static long start_time = 0;
 static long end_time = 0;
 
@@ -52,7 +54,8 @@ int main(int argc, const char* argv[]) {
     std::cout << "read: " << read_count << " read_ret: " << read_ret_count  << std::endl;
     
     int total = open_count + read_count + close_count;
-    long time = (end_time - start_time)/1000000;
+    int date = end_date - start_date;
+    long time = (end_time - start_time)/1000000 + (date < 0 ? date + 365 : date) * 24 * 3600 * 1000;
     std::cout << "\nTotal: " << total << "\t";
     std::cout << "Time: " << time << "ms" << "\t";
     std::cout << "Thoroughput: " << (double)total/time << "/ms" << std::endl;
@@ -108,8 +111,10 @@ std::string getLogType(const hadoop::hdfs::log &msg)
 void countOp(const hadoop::hdfs::log &msg)
 {
     if (start_time == 0) {
+        start_date = msg.date();
         start_time = msg.time();
     } else {
+        end_date = msg.date();
         end_time = msg.time();
     }
 

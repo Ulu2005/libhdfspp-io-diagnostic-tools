@@ -3,7 +3,6 @@
 #ifndef LIBHDFSPP_LOG_H_
 #define LIBHDFSPP_LOG_H_
 
-#include <cstdarg>
 #include "Logging.h"
 
 namespace hdfs {
