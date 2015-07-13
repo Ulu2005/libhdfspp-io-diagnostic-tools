@@ -1,4 +1,5 @@
 add_library(reader LogReader.cc)
+add_dependencies(reader protobuf)
 add_executable(treader TinyReader.cc)
 add_executable(tmerger TinyMerger.cc)
 
