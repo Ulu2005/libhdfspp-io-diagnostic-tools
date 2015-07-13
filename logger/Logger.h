@@ -1,6 +1,20 @@
-/* Copyright (c) 2005 - 2015, Hewlett-Packard Development Co., L.P. */
-
-// Logger for libhdfs++.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #ifndef LIBHDFSPP_LOGGER_H_
 #define LIBHDFSPP_LOGGER_H_ 
@@ -16,33 +30,32 @@ namespace hdfs
 
 class Logger
 {
-public:
-    /* Public type */
-    typedef enum {              //function type of different file operation
-        OPEN,
-        OPEN_RET,
-        CLOSE,
-        CLOSE_RET,
-        READ,
-        READ_RET
-    } FuncType;
+ public:
+  typedef enum {        //function type of different file operation
+    OPEN,
+    OPEN_RET,
+    CLOSE,
+    CLOSE_RET,
+    READ,
+    READ_RET
+  } FuncType;
 
-    /* Public methods */
-    Logger ();
-    virtual ~Logger ();
-    
-    bool startLog(const char* logFile, const char* indexFile);
-    bool logMessage(FuncType type, va_list &va);
-    
-private:
-    long getTime();       //get time in nanosecond and refresh current day
-    
-    std::mutex _mutex;
-    int _current_day;
-    FILE* _indexFile;
-    ::google::protobuf::io::FileOutputStream* _logFile;
+  Logger ();
+  virtual ~Logger ();
+
+  bool startLog(const char* logFile, const char* indexFile);
+  bool logMessage(FuncType type, va_list &va);
+
+ private:
+  long getTime();       //get time in nanosecond and refresh current day
+
+  std::mutex mutex_;
+  int current_day_;
+  FILE* indexFile_;
+  ::google::protobuf::io::FileOutputStream* logFile_;
 };
- 
+
 } /* iotools */ 
 
 #endif
+
