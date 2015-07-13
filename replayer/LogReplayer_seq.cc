@@ -4,9 +4,11 @@
 
 #include "libhdfs++/chdfs.h"
 #include "LogReader.h"
+#include "CmlParser.h"
 
 static std::map<long, hdfsFile> files; //mapping between logged hdfsFile --> hdfsFile
 static hdfsFS fs(nullptr);
+static std::string parent_folder = "";
 
 void handleOpen(const hadoop::hdfs::log &msg);
 void handleOpenRet(const hadoop::hdfs::log &msg);
@@ -14,14 +16,17 @@ void handleRead(const hadoop::hdfs::log &msg);
 void handleClose(const hadoop::hdfs::log &msg);
 
 int main(int argc, const char* argv[]) {
-    if (argc != 5) {
-        std::cout << "Usage: " << argv[0] << " <log file> <index file> ";
+    hdfs::CmlParser cml(argc, argv);
+    
+    if (cml.getArgSize() != 4) {
+        std::cout << "Usage: " << cml.getProgName() << " [--parent-folder=<path>] <log file> <index file> ";
         std::cout << "<host> <port>" << std::endl;
         return 0;
     } 
+    cml.getOption("parent-folder", parent_folder);
    
-    hdfs::LogReader reader(argv[1], argv[2]);
-    fs = hdfsConnect(argv[3], std::atoi(argv[4])); 
+    hdfs::LogReader reader(cml.getArg(0).c_str(), cml.getArg(1).c_str());
+    fs = hdfsConnect(cml.getArg(2).c_str(), std::atoi(cml.getArg(3).c_str())); 
 
     int index(0);
     std::unique_ptr<hadoop::hdfs::log> msg;
@@ -68,7 +73,16 @@ int main(int argc, const char* argv[]) {
 
 void handleOpen(const hadoop::hdfs::log &msg)
 {
-    hdfsFile file = hdfsOpenFile(fs, msg.path().c_str(), 
+    std::string path = msg.path();
+    if (parent_folder != "") {
+        if (path.at(0) == '/') {
+            path = "/" +  parent_folder + path;
+        } else {
+            path = parent_folder + "/" + path;
+        }
+    }
+
+    hdfsFile file = hdfsOpenFile(fs, path.c_str(), 
                                 (int)msg.argument(1), 
                                 (int)msg.argument(2), 
                                 (short)msg.argument(3), 

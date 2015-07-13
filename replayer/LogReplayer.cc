@@ -13,6 +13,7 @@ static hdfsFS fs(nullptr);
 static std::map<long, hdfsFile> files; //mapping between logged hdfsFile --> hdfsFile
 static std::vector<std::unique_ptr<hadoop::hdfs::log>> jobs;
 static bool wait_before_new_thread = false;
+static std::string parent_folder = "";
 
 void handleJobs();
 
@@ -23,12 +24,14 @@ void handleClose(const hadoop::hdfs::log &msg);
 
 int main(int argc, const char* argv[]) {
     hdfs::CmlParser cml(argc, argv);
+
     if (cml.getArgSize() != 4) {
-        std::cout << "Usage: " << cml.getProgName() << " [-w|--wait] ";
+        std::cout << "Usage: " << cml.getProgName() << " [-w|--wait] [--parent-folder=<path>] ";
         std::cout << "<log file> <index file> " << "<host> <port>" << std::endl;
         return 0;
     }
     wait_before_new_thread = cml.getFlag("w") || cml.getFlag("wait");
+    cml.getOption("parent-folder", parent_folder);
    
     hdfs::LogReader reader(cml.getArg(0).c_str(), cml.getArg(1).c_str());
     fs = hdfsConnect(cml.getArg(2).c_str(), std::atoi(cml.getArg(3).c_str())); 
@@ -120,7 +123,16 @@ void handleJobs()
 
 void handleOpen(const hadoop::hdfs::log &msg)
 {
-    hdfsFile file = hdfsOpenFile(fs, msg.path().c_str(), 
+    std::string path = msg.path();
+    if (parent_folder != "") {
+        if (path.at(0) == '/') {
+            path = "/" +  parent_folder + path;
+        } else {
+            path = parent_folder + "/" + path;
+        }
+    }
+
+    hdfsFile file = hdfsOpenFile(fs, path.c_str(), 
                                 (int)msg.argument(1), 
                                 (int)msg.argument(2), 
                                 (short)msg.argument(3), 
