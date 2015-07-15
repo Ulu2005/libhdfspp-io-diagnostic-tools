@@ -17,6 +17,7 @@
  */
 
 #include <map>
+#include <mutex>
 #include <chrono>
 #include <vector>
 #include <thread>
@@ -26,13 +27,25 @@
 #include "LogReader.h"
 #include "CmlParser.h"
 
-static const unsigned threads_max = std::thread::hardware_concurrency() * 2;
-static hdfsFS fs(nullptr);
-static std::map<long, hdfsFile> files;
-static std::vector<std::unique_ptr<hadoop::hdfs::log>> jobs;
+//constant
+static const unsigned MAX_THREADS = std::thread::hardware_concurrency() * 2;
+static const int MB = 1024 * 1024;
+
+//program options
 static bool wait_before_new_thread = false;
 static std::string parent_folder = "";
 
+//global variables
+static std::mutex mtx;
+static bool need_count = true;
+static int read_bytes = 0;
+static double run_time = 0;
+static hdfsFS fs = nullptr;
+static std::map<long, hdfsFile> files;
+static std::vector<std::unique_ptr<hadoop::hdfs::log>> jobs;
+
+void getReadInfo(int bytes, double seconds);
+void printBandwidth();
 void handleJobs();
 void handleOpen(const hadoop::hdfs::log &msg);
 void handleOpenRet(const hadoop::hdfs::log &msg);
@@ -60,6 +73,7 @@ int main(int argc, const char* argv[]) {
 
   std::cout << "Start replaying file operations." << std::endl;
   start = std::chrono::system_clock::now();
+  std::thread count_thread(printBandwidth);
 
   while((msg = reader.next()) != nullptr) {
     switch (msg->type()) {
@@ -82,9 +96,10 @@ int main(int argc, const char* argv[]) {
 
     index++;
   }
-
   end = std::chrono::system_clock::now();
   std::chrono::duration<double> time = end - start;
+  need_count = false;
+  count_thread.join();
 
   if (!reader.isEOF()) {
     std::cerr << "Failed to parse log #" << (++index) << std::endl;
@@ -97,6 +112,32 @@ int main(int argc, const char* argv[]) {
   hdfsDisconnect(fs);
 
   return 0;
+}
+
+/* Pass read info to the thread */
+void getReadInfo(int bytes, double seconds)
+{
+  mtx.lock();
+  read_bytes += bytes;
+  run_time += seconds;
+  mtx.unlock();
+}
+
+/* Calculate and print bandwidth info */
+void printBandwidth()
+{
+  while(need_count) {
+    mtx.lock(); 
+    if (run_time > 0) {
+      std::cout << "Current bandwidth: ";
+      std::cout << read_bytes / run_time / MB << " MB/s" << std::endl; 
+      read_bytes = 0;
+      run_time = 0; 
+    }
+    mtx.unlock();
+
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+  }
 }
 
 /* spawn threads to handle file operation and wait them to finish */
@@ -124,7 +165,7 @@ void handleJobs()
         ;
     }
 
-    if (threads.size() == threads_max) { //avoid too many requests to hdfs
+    if (threads.size() == MAX_THREADS) { //avoid too many requests to hdfs
       for (int i = 0; i < (int)threads.size(); ++i) {
         threads[i].join(); 
       }
@@ -172,13 +213,17 @@ void handleRead(const hadoop::hdfs::log &msg)
   if (file != files.end()) {
     size_t buf_size = msg.argument(4);
     char* buffer = new char[buf_size];
+    auto start = std::chrono::system_clock::now();
 
     auto ret = hdfsPread(fs, file->second, 
         (off_t)msg.argument(2), 
         reinterpret_cast<void*>(buffer), 
         buf_size);
 
-    (void)ret;//make gcc happy
+    auto end = std::chrono::system_clock::now();
+    std::chrono::duration<double> elapsed = end - start;
+    getReadInfo(ret, elapsed.count());
+    
     delete[] buffer;
   } else {
     std::cerr << "Read: file " 
