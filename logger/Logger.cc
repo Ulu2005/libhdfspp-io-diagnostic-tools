@@ -22,6 +22,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <pthread.h>
+#include <google/protobuf/io/coded_stream.h>
 
 #include "Logger.h"
 
@@ -33,18 +34,12 @@ Logger ioLogger;
 Logger::Logger()
   : mutex_()
   , current_day_(-1)
-  , indexFile_(nullptr)
   , logFile_(nullptr)
 {
 }
 
 Logger::~Logger()
 {
-  if (indexFile_ != nullptr) {
-    fclose(indexFile_);
-    indexFile_ = nullptr;
-  }
-
   if (logFile_ != nullptr) {
     logFile_->Close();
     delete logFile_;
@@ -52,9 +47,9 @@ Logger::~Logger()
   }
 }
 
-bool Logger::startLog(const char* logFile, const char* indexFile)
+bool Logger::startLog(const char* logFile)
 {
-  if (!logFile || !indexFile) {
+  if (!logFile) {
     return false;
   }
 
@@ -65,12 +60,7 @@ bool Logger::startLog(const char* logFile, const char* indexFile)
     return false;
   } 
   logFile_ = new pbio::FileOutputStream(logFileFd);
-
-  indexFile_ = fopen(indexFile, "w+"); 
-  if (indexFile_ == NULL) {
-    return false;
-  }
-
+  
   return true;
 }
 
@@ -119,21 +109,27 @@ bool Logger::logMessage(FuncType type, va_list &va)
   }
   va_end(va);
 
-  //write log message and message size onto disk
-  int size = msg.ByteSize();
+  return writeDelimitedLog(msg);
+}
 
+bool Logger::writeDelimitedLog(::hadoop::hdfs::log& msg)
+{  
   std::lock_guard<std::mutex> lock(mutex_);
-  if (fprintf(indexFile_, "%d\n", size) <= 0) {
-    std::cerr << "failed to write message size." << std::endl;
-    return false;
-  }
-  fflush(indexFile_);
+  
+  const int size = msg.ByteSize();
+  pbio::CodedOutputStream output(logFile_);
 
-  if (!msg.SerializeToZeroCopyStream(logFile_)) {
-    std::cerr << "failed to serialize log message." << std::endl;
-    return false;
+  output.WriteVarint32(size);
+  uint8_t* buffer = output.GetDirectBufferForNBytesAndAdvance(size);
+
+  if (buffer != nullptr) {
+    msg.SerializeWithCachedSizesToArray(buffer); 
+  } else {
+    msg.SerializeWithCachedSizes(&output);
+    if (output.HadError()) return false;
   }
-  logFile_->Flush(); 
+
+  //logFile_->Flush(); TODO: need flush?
 
   return true;
 }
