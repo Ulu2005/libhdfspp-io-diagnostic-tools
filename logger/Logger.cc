@@ -49,16 +49,12 @@ Logger::~Logger()
 
 bool Logger::startLog(const char* logFile)
 {
-  if (!logFile) {
-    return false;
-  }
+  if (!logFile) return false;
 
   mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
-
   int logFileFd = open(logFile, O_CREAT | O_WRONLY | O_TRUNC, mode);
-  if (logFileFd == -1) {
-    return false;
-  } 
+  
+  if (logFileFd == -1) return false;
   logFile_ = new pbio::FileOutputStream(logFileFd);
   
   return true;
@@ -109,13 +105,16 @@ bool Logger::logMessage(FuncType type, va_list &va)
   }
   va_end(va);
 
-  return writeDelimitedLog(msg);
+  std::lock_guard<std::mutex> lock(mutex_);
+
+  if (!writeDelimitedLog(msg)) return false;
+  logFile_->Flush();
+  
+  return true;
 }
 
-bool Logger::writeDelimitedLog(::hadoop::hdfs::log& msg)
+bool Logger::writeDelimitedLog(::hadoop::hdfs::log &msg)
 {  
-  std::lock_guard<std::mutex> lock(mutex_);
-  
   const int size = msg.ByteSize();
   pbio::CodedOutputStream output(logFile_);
 
@@ -128,9 +127,9 @@ bool Logger::writeDelimitedLog(::hadoop::hdfs::log& msg)
     msg.SerializeWithCachedSizes(&output);
     if (output.HadError()) return false;
   }
-
-  //logFile_->Flush(); TODO: need flush?
-
+  
+  // The CodedOutputStream's destructor will set the underlying stream's
+  // position to where last byte is wrote.
   return true;
 }
 

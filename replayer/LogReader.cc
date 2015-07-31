@@ -18,9 +18,9 @@
 
 #include <fcntl.h>
 #include <unistd.h>
+#include <google/protobuf/io/coded_stream.h>
 
 #include "LogReader.h"
-#include <google/protobuf/io/coded_stream.h>
 
 #define BUFSIZE 32
 

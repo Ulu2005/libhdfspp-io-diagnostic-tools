@@ -45,7 +45,7 @@ class Logger
 
   bool startLog(const char* logFile);
   bool logMessage(FuncType type, va_list &va);
-  bool writeDelimitedLog(::hadoop::hdfs::log& msg);
+  bool writeDelimitedLog(::hadoop::hdfs::log &msg);
 
  private:
   long getTime();       //get time in nanosecond and refresh current day
