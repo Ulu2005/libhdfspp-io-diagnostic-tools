@@ -4,4 +4,4 @@ add_executable(treader TinyReader.cc)
 add_executable(tmerger TinyMerger.cc)
 
 target_link_libraries(treader reader protobuf)
-target_link_libraries(tmerger reader protobuf)
+target_link_libraries(tmerger reader logger protobuf)
