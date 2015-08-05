@@ -62,6 +62,8 @@ bool Logger::startLog(const char* logFile)
 
 bool Logger::logMessage(FuncType type, va_list &va)
 {
+  std::lock_guard<std::mutex> lock(mutex_);
+  
   hadoop::hdfs::log msg; 
   msg.set_time(getTime());
   msg.set_date(current_day_);     //should always set after time
@@ -104,8 +106,6 @@ bool Logger::logMessage(FuncType type, va_list &va)
       break;
   }
   va_end(va);
-
-  std::lock_guard<std::mutex> lock(mutex_);
 
   if (!writeDelimitedLog(msg)) return false;
   logFile_->Flush();
