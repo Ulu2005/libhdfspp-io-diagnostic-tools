@@ -50,12 +50,20 @@ int main(int argc, const char* argv[]) {
   bool verbose = cml.getFlag("v") || cml.getFlag("verbose");
 
   hdfs::LogReader reader(cml.getArg(0).c_str());
-  int index(0);
+  int index = 0;
+  long last_time = -1;
   std::unique_ptr<hadoop::hdfs::log> msg;
 
   while((msg = reader.next()) != nullptr) {
     index++;
     countOp(*msg);
+
+    if (last_time > msg->time()) {
+      std::cerr << "Corrupted log file." << std::endl;
+      index--;
+      break;
+    }
+    last_time = msg->time();
 
     if (verbose) {
       std::cout << "#" << index << std::endl;
@@ -77,7 +85,7 @@ int main(int argc, const char* argv[]) {
   int total = open_count + read_count + close_count;
   int date = end_date - start_date;
   long time = (end_time - start_time)/1000000 + 
-              (date < 0 ? date + 365 : date) * 24 * 3600 * 1000;
+    (date < 0 ? date + 365 : date) * 24 * 3600 * 1000;
   std::cout << "\nTotal: " << total << "\t";
   std::cout << "Time: " << time << "ms" << "\t";
   std::cout << "Thoroughput: " << (double)total/time << "/ms" << std::endl;

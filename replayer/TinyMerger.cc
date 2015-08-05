@@ -17,9 +17,8 @@
  */
 
 #include <vector>
-#include <set>
+#include <queue>
 #include <string>
-#include <cstring>
 #include <iostream>
 #include <chrono>
 #include <sys/types.h>
@@ -33,12 +32,13 @@
 #define LOG_NAME "libhdfspp_merged.log"
 
 using namespace hdfs;
+using logPtr = std::shared_ptr<hadoop::hdfs::log>;
+using item = std::pair<logPtr, int>;
 
 static Logger logger;
 
 std::vector<LogReader> getReaders(DIR* dir, std::string parent);
 void mergeLog(std::vector<LogReader> &readers);
-int findOldestMsg(const std::vector<std::unique_ptr<hadoop::hdfs::log>> &msgs);
 
 int main(int argc, char *argv[])
 {
@@ -118,43 +118,33 @@ std::vector<LogReader> getReaders(DIR* dir, std::string parent)
 /* Read from multiple log files and merge them into a new one */
 void mergeLog(std::vector<LogReader> &readers)
 {
-  std::vector<std::unique_ptr<hadoop::hdfs::log>> msgs;
-  for (auto r : readers) {
-    msgs.push_back(r.next());
+  // initialize the min heap
+  auto item_comp = [](const item &l, const item &r){ 
+    return (l.first->date() >= r.first->date()) 
+      && (l.first->time() > r.first->time()); 
+  };
+
+  using heap = std::priority_queue<item, std::vector<item>, decltype(item_comp)>;
+  heap  min_heap(item_comp);
+  logPtr msg;
+
+  for (int i = 0; i < (int)readers.size(); ++i) {
+    msg.reset(readers.at(i).next().release());
+    if (msg == nullptr) continue;
+    min_heap.push(std::make_pair(msg, i)); 
   }
 
-  while(true) {
-    // find min msg
-    int index = findOldestMsg(msgs);
-    if (index == -1) {
-      break;
-    }
+  // start n-way merge sort
+  while (!min_heap.empty()) {
+    auto min = min_heap.top();
+    int index = min.second;
+      
+    logger.writeDelimitedLog(*min.first);
+    min_heap.pop();
 
-  logger.writeDelimitedLog(*msgs.at(index));
-  msgs.at(index) = readers.at(index).next();
+    msg.reset(readers.at(index).next().release());
+    if (msg == nullptr) continue;
+    min_heap.push(std::make_pair(msg, index)); 
   }
-}
-
-/* Find index of messages with min time, retur -1 if all messages are nullptr */
-int findOldestMsg(const std::vector<std::unique_ptr<hadoop::hdfs::log>> &msgs)
-{
-  int min = -1;
-  int min_date = -1;
-  long min_time = -1;
-
-  for (int i = 0; i < (int)msgs.size(); ++i) {
-    if (msgs[i] == nullptr) {
-      continue;
-    }
-
-    if ((min == -1) || 
-        ((msgs[i]->date() <= min_date) && (msgs[i]->time() < min_time))) {
-      min = i;
-      min_date = msgs[i]->date();
-      min_time = msgs[i]->time(); 
-    }
-  }
-
-  return min;
 }
 
