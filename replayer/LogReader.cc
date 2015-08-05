@@ -42,9 +42,7 @@ LogReader::LogReader (const char* logPath)
 
 LogReader::~LogReader()
 {
-  if (logFile_ != nullptr) {
-    logFile_ = nullptr;
-  }
+  logFile_ = nullptr;
 }
 
 void LogReader::close()
