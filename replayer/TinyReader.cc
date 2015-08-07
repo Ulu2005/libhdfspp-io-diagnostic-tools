@@ -20,9 +20,9 @@
 
 #include <iostream>
 #include <string>
+#include <unistd.h>
 
 #include "LogReader.h"
-#include "CmlParser.h"
 
 static int open_count = 0;
 static int open_ret_count = 0;
@@ -39,17 +39,29 @@ void printLogInfo(const hadoop::hdfs::log &msg);
 std::string getLogType(const hadoop::hdfs::log &msg);
 void countOp(const hadoop::hdfs::log &msg);
 
-int main(int argc, const char* argv[]) {
-  hdfs::CmlParser cml(argc, argv);
-  if (cml.getArgSize() != 1) {
-    std::cout << "Usage: " << cml.getProgName() << " "
-      << "[-v|--verbose] <log file>" << std::endl;
+int main(int argc, char* argv[]) {
+  int opt;
+  bool verbose = false;
+
+  while((opt = getopt(argc, argv, "v")) != -1) {
+    switch (opt) {
+      case 'v':
+        verbose = true;
+        break;
+      default:
+        std::cout << "Usage: " << argv[0] << " ";
+        std::cout << "[-v] <log file>" << std::endl;
+        return 0;
+    }
+  }
+  
+  if (optind >= argc) {
+    std::cout << "Usage: " << argv[0] << " ";
+    std::cout << "[-v] <log file>" << std::endl;
     return 0;
   }
+  hdfs::LogReader reader(argv[optind]);
 
-  bool verbose = cml.getFlag("v") || cml.getFlag("verbose");
-
-  hdfs::LogReader reader(cml.getArg(0).c_str());
   int index = 0;
   long last_time = -1;
   std::unique_ptr<hadoop::hdfs::log> msg;

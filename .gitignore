@@ -40,3 +40,4 @@ install_manifest.txt
 
 # Other
 data
+*.color_coded

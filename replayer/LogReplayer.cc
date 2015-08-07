@@ -27,18 +27,18 @@
 #include <vector>
 #include <thread>
 #include <iostream>
+#include <unistd.h>
 
 #include "libhdfs++/chdfs.h"
 #include "LogReader.h"
-#include "CmlParser.h"
 
 //constant
-static const unsigned MAX_THREADS = std::thread::hardware_concurrency() * 2;
 static const int MB = 1024 * 1024;
 
 //program options
 static bool wait_before_new_thread = false;
 static std::string parent_folder = "";
+static unsigned max_threads = std::thread::hardware_concurrency() * 2;
 
 //global variables
 static std::mutex mtx;
@@ -57,20 +57,44 @@ void handleOpenRet(const hadoop::hdfs::log &msg);
 void handleRead(const hadoop::hdfs::log &msg);
 void handleClose(const hadoop::hdfs::log &msg);
 
-int main(int argc, const char* argv[]) {
-  hdfs::CmlParser cml(argc, argv);
+int main(int argc, char* argv[]) {
+  int opt;
 
-  if (cml.getArgSize() != 3) {
-    std::cout << "Usage: " << cml.getProgName();
-    std::cout << " [-w|--wait] [--parent-folder=<path>] ";
-    std::cout << " <log file> " << "<host> <port>" << std::endl;
-    return 0;
+  while((opt = getopt(argc, argv, "swp:")) != -1) {
+    switch (opt) {
+      case 's':
+        need_count = false;
+        max_threads = 1;
+        break;
+      case 'w':
+        wait_before_new_thread = true;
+        break;
+      case 'p':
+        parent_folder = optarg;
+        break;
+      default:
+        std::cout << "Usage: " << argv[0] << " [-s] [-w] [-p parent-folder]";
+        std::cout << " <log file> " << "<host> <port>" << std::endl;
+        std::cout << "Options:" << std::endl;
+        std::cout << "  -s          Enable sequential mode. All file operations are executed sequentially." << std::endl;
+        std::cout << "  -w          Enable wait mode. Replayer will reproduce time gap between original file operations." << std::endl;
+        std::cout << "  -p <arg>    Specify the parent foder for the data set." << std::endl;
+        return 0;
+    }
   }
-  wait_before_new_thread = cml.getFlag("w") || cml.getFlag("wait");
-  cml.getOption("parent-folder", parent_folder);
 
-  hdfs::LogReader reader(cml.getArg(0).c_str());
-  fs = hdfsConnect(cml.getArg(1).c_str(), std::atoi(cml.getArg(2).c_str())); 
+  if (optind >= argc) {
+        std::cout << "Usage: " << argv[0] << " [-s] [-w] [-p parent-folder]";
+        std::cout << " <log file> " << "<host> <port>" << std::endl;
+        std::cout << "Options:" << std::endl;
+        std::cout << "  -s          Enable sequential mode. All file operations are executed sequentially." << std::endl;
+        std::cout << "  -w          Enable wait mode. Replayer will reproduce time gap between original file operations." << std::endl;
+        std::cout << "  -p <arg>    Specify the parent foder for the data set." << std::endl;
+        return 0;
+  }
+
+  hdfs::LogReader reader(argv[optind]);
+  fs = hdfsConnect(argv[optind + 1], std::atoi(argv[optind + 2])); 
 
   int index(0);
   std::unique_ptr<hadoop::hdfs::log> msg;
@@ -175,7 +199,7 @@ void handleJobs()
         ;
     }
 
-    if (threads.size() == MAX_THREADS) { //avoid too many requests to hdfs
+    if (threads.size() == max_threads) { //avoid too many requests to hdfs
       for (int i = 0; i < (int)threads.size(); ++i) {
         threads[i].join(); 
       }
@@ -207,7 +231,7 @@ void handleOpen(const hadoop::hdfs::log &msg)
       (int)msg.argument(2), 
       (short)msg.argument(3), 
       (int)msg.argument(4));
-  
+
   // Using thread id as key to temporarily store file here is safe.
   // In the same thread all operations are sequential, thus a OPEN
   // must be followed by an OPEN_RET. It's impossible in a single
@@ -240,7 +264,7 @@ void handleRead(const hadoop::hdfs::log &msg)
     auto end = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed = end - start;
     getReadInfo(ret, elapsed.count());
-    
+
     delete[] buffer;
   } else {
     std::cerr << "Read: file " 
