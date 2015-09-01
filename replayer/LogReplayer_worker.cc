@@ -20,14 +20,16 @@ int main(int argc, const char* argv[]) {
   std::unique_ptr<hadoop::hdfs::log> msg;
   std::map<long, hdfsFile> files;
   std::map<hdfsFile, int> ref_count;
-  std::map<long, std::unique_ptr<hdfs::LogWorker>> workers;
+  hdfs::WorkerMap workers;
 
   while((msg = reader.next()) != nullptr) {
     long id = msg->threadid();
     auto found = workers.find(id);
 
     if (found == workers.end()) {
-      workers[id].reset(new hdfs::LogWorker(fs, &files, &ref_count, &file_mtx, &ref_mtx));
+      workers[id].reset(
+        new hdfs::LogWorker(
+          id, fs, &files, &ref_count, &file_mtx, &ref_mtx, &workers));
       workers[id]->start();
     }
 

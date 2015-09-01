@@ -1,14 +1,15 @@
 #include <iostream>
+#include <chrono>
 
 #include "LogWorker.h"
 
 using namespace hdfs;
 
-LogWorker::LogWorker(hdfsFS fs, 
+LogWorker::LogWorker(int id, hdfsFS fs, 
     std::map<long, hdfsFile> *files, 
     std::map<hdfsFile, int> *ref_count, 
-    std::mutex *file_mtx, std::mutex *ref_mtx)
-  : end_(false)
+    std::mutex *file_mtx, std::mutex *ref_mtx, WorkerMap *workers)
+  : id_(id)
   , thread_()
   , cv_mtx_()
   , queue_mtx_()
@@ -19,13 +20,15 @@ LogWorker::LogWorker(hdfsFS fs,
   , fs_(fs)
   , files_(files)
   , ref_count_(ref_count)
+  , workers_(workers)
 {
 }
 
+// the worker's life cycle is managed by itself, when the queue has been empty 
+// for some time, the worker will destroy itself. Otherwise, it should keep 
+// waiting until new jobs were added to the queue.
 LogWorker::~LogWorker()
 {
-  end_ = true;
-  cv_.notify_all();
   thread_.join();
 }
 
@@ -37,26 +40,31 @@ void LogWorker::start()
 void LogWorker::run()
 {
   std::unique_lock<std::mutex> cv_lock(cv_mtx_);
+  std::unique_lock<std::mutex> queue_lk(queue_mtx_, std::defer_lock);
+  bool loop = true;
+  auto empty =[this, &queue_lk](){ // ensure that when cv is waiting, queue mutex is not hold
+    queue_lk.lock(); 
+    bool ret = queue_.empty();
+    queue_lk.unlock();
+    return ret;};
 
   while(true) {
     std::unique_ptr<hadoop::hdfs::log> msg;
-    
-    {
-      std::lock_guard<std::mutex> queue_lk(queue_mtx_);
-      if (queue_.empty() && !end_) {
-        cv_.wait(cv_lock);
+    auto now = std::chrono::system_clock::now();
 
-        // thread could be awaken here by destructor
-        if (queue_.empty() && end_) {
-          break;
-        }
-      } else if (queue_.empty() && end_) {
-        break;
+    while (empty()) {
+      if (cv_.wait_until(cv_lock, now + std::chrono::seconds(10)) == std::cv_status::timeout) {
+        loop = false;
+        break; 
       }
+    } 
 
-      msg = std::move(queue_.front());
-      queue_.pop_front();
-    } // reduce the scope of locking
+    if (!loop) break;
+   
+    queue_lk.lock(); 
+    msg = std::move(queue_.front());
+    queue_.pop_front();  
+    queue_lk.unlock();
 
     switch (msg->type()) {
       case hadoop::hdfs::log_FuncType_OPEN:
@@ -76,6 +84,10 @@ void LogWorker::run()
     } 
   }
 
+  // remove worker itself from workers hashtable, as the worker is wrapped by
+  // unique pointer, the descrutor will be automatically called when GC works.
+  //TODO: add lock here
+  workers_->erase(id_);
 }
 
 void LogWorker::addJob(std::unique_ptr<hadoop::hdfs::log> job)
@@ -95,7 +107,7 @@ void LogWorker::handleOpen(const hadoop::hdfs::log &msg)
       (int)msg.argument(2), 
       (short)msg.argument(3), 
       (int)msg.argument(4));
-  
+
   std::lock_guard<std::mutex> file_lk(*file_mtx_);
   (*files_)[msg.threadid()] = file;
 
@@ -104,7 +116,7 @@ void LogWorker::handleOpen(const hadoop::hdfs::log &msg)
 void LogWorker::handleOpenRet(const hadoop::hdfs::log &msg)
 {
   hdfsFile temp;
-  
+
   {
     std::lock_guard<std::mutex> file_lk(*file_mtx_);
     temp = (*files_)[msg.threadid()];
@@ -124,7 +136,7 @@ void LogWorker::handleRead(const hadoop::hdfs::log &msg)
     std::lock_guard<std::mutex> file_lk(*file_mtx_);
     file = files_->find(msg.argument(1));
   } 
- 
+
   { 
     std::lock_guard<std::mutex> ref_lk(*ref_mtx_);
     (*ref_count_)[file->second]++;
@@ -138,7 +150,7 @@ void LogWorker::handleRead(const hadoop::hdfs::log &msg)
         (off_t)msg.argument(2), 
         reinterpret_cast<void*>(buffer), 
         buf_size);
-    
+
     { 
       std::lock_guard<std::mutex> ref_lk(*ref_mtx_);
       (*ref_count_)[file->second]--;

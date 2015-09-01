@@ -14,13 +14,16 @@
 namespace hdfs
 {
 
+class LogWorker;
+typedef std::map<long, std::unique_ptr<LogWorker>> WorkerMap;
+
 class LogWorker
 {
  public:
-  LogWorker (hdfsFS fs, 
+  LogWorker (int id, hdfsFS fs, 
       std::map<long, hdfsFile> *files, 
       std::map<hdfsFile, int> *ref_count, 
-      std::mutex *file_mtx, std::mutex *ref_mtx);
+      std::mutex *file_mtx, std::mutex *ref_mtx, WorkerMap *workers);
   virtual ~LogWorker ();
 
   void start();//start the background work thread
@@ -33,7 +36,7 @@ class LogWorker
   void handleClose(const hadoop::hdfs::log &msg);
 
  private:
-  bool end_;
+  int id_;
   std::thread thread_;
   std::mutex cv_mtx_;
   std::mutex queue_mtx_;
@@ -45,6 +48,7 @@ class LogWorker
   hdfsFS fs_;
   std::map<long, hdfsFile> *files_;
   std::map<hdfsFile, int> *ref_count_;
+  WorkerMap *workers_;
 };
 
 } /* hdfs */ 
